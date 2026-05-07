@@ -1612,7 +1612,6 @@ const SearchScreen = ({ onSelectElement }: { onSelectElement: (e: ChemicalElemen
             placeholder={t.searchElements}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            autoFocus
           />
           <div className="focus-indicator"></div>
         </div>
