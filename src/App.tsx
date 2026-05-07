@@ -47,31 +47,51 @@ const AuthScreen: React.FC = () => {
 const WelcomeScreen = ({ onStart }: { onStart: () => void }) => {
   const { language } = useLanguage();
   const t = translations[language];
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverscroll = document.body.style.overscrollBehavior;
+    const previousHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+    document.documentElement.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overscrollBehavior = previousBodyOverscroll;
+      document.documentElement.style.overscrollBehavior = previousHtmlOverscroll;
+    };
+  }, []);
+
   return (
-    <main className="welcome-screen fixed inset-0 z-[100] bg-[#16181D] flex flex-col items-center justify-between p-8 overflow-hidden">
+    <main className="welcome-screen fixed inset-0 z-[100] h-[100dvh] max-h-[100dvh] w-full bg-[#16181D] flex flex-col items-center justify-between overflow-hidden overscroll-none px-5 pt-5 pb-4 md:p-8">
       {/* Background Particles */}
       <ParticleCanvas />
 
       {/* Hero Content */}
-      <div className="relative z-10 w-full flex flex-col items-center flex-1 py-12">
-        <header className="mt-8 text-center">
-          <div className="welcome-card bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
-            <h1 className="font-arabic text-5xl md:text-7xl font-bold tracking-tighter text-blue-400 drop-shadow-[0_0_20px_rgba(117,159,240,0.3)] select-none transition-colors">
+      <div className="relative z-10 flex h-full w-full max-w-5xl flex-col items-center py-6 md:py-12">
+        <header className="mt-4 text-center md:mt-8">
+          <div className="welcome-card overflow-hidden bg-white/5 backdrop-blur-sm px-5 py-4 md:p-8 rounded-[1.75rem] md:rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
+            <h1 className="font-arabic text-[2.6rem] leading-none sm:text-5xl md:text-7xl font-bold tracking-tighter text-blue-400 drop-shadow-[0_0_20px_rgba(117,159,240,0.3)] select-none transition-colors">
               منارة الكيمياء
             </h1>
             <div className="mt-4 h-1 w-0 bg-blue-400 group-hover:w-full transition-all duration-500 mx-auto rounded-full" />
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center w-full gap-12">
-          <div className="welcome-card bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
-            <h2 className="font-arabic text-3xl md:text-5xl font-light text-white/90 tracking-wide select-none group-hover:text-blue-400 transition-colors">
+        <div className="flex-1 flex flex-col items-center justify-center w-full gap-8 md:gap-12">
+          <div className="welcome-card overflow-hidden bg-white/5 backdrop-blur-sm px-5 py-4 md:p-8 rounded-[1.5rem] md:rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
+            <h2 className="font-arabic text-[1.9rem] sm:text-3xl md:text-5xl font-light text-white/90 tracking-wide select-none group-hover:text-blue-400 transition-colors">
               {t.welcome}
             </h2>
             <div className="mt-4 h-1 w-0 bg-blue-400 group-hover:w-full transition-all duration-500 mx-auto rounded-full" />
           </div>
 
-          <div className="flex flex-col items-center mt-8 gap-6 relative">
+          <div className="flex flex-col items-center mt-4 md:mt-8 gap-6 relative">
             <ChaosButton onClick={onStart} label={t.start} />
             
             {/* Arrow and phrase underneath the button */}
@@ -86,13 +106,13 @@ const WelcomeScreen = ({ onStart }: { onStart: () => void }) => {
           </div>
         </div>
 
-        <footer className="mt-auto text-white/40 text-sm font-medium tracking-widest opacity-40 select-none">
+        <footer className="mt-auto pt-4 text-white/40 text-xs md:text-sm font-medium tracking-widest opacity-40 select-none">
           CHEMISTRY LIGHTHOUSE © 2024
         </footer>
       </div>
 
       {/* Interactive Hint for Mobile */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:hidden z-20 pointer-events-none">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-20 pointer-events-none">
         <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-arabic animate-pulse">
           المس الشاشة للتفاعل
         </p>

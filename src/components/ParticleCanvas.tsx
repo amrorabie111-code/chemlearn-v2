@@ -25,12 +25,16 @@ export const ParticleCanvas = () => {
 
     let animationFrameId: number
     let initAttempts = 0
-    const maxAttempts = 5
+
+    const resetPointer = () => {
+      mouse.current.x = -1000
+      mouse.current.y = -1000
+    }
 
     const init = () => {
-      // Use document dimensions for better mobile viewport handling
-      const width = document.documentElement.clientWidth
-      const height = document.documentElement.clientHeight
+      // Prefer visual viewport dimensions for better mobile browser handling
+      const width = Math.round(window.visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth)
+      const height = Math.round(window.visualViewport?.height ?? window.innerHeight ?? document.documentElement.clientHeight)
       canvas.width = width
       canvas.height = height
       particles.current = []
@@ -125,9 +129,23 @@ export const ParticleCanvas = () => {
       }
     }
 
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        mouse.current.x = e.touches[0].clientX
+        mouse.current.y = e.touches[0].clientY
+      }
+    }
+
     const handleMouseLeave = () => {
-      mouse.current.x = -1000
-      mouse.current.y = -1000
+      resetPointer()
+    }
+
+    const handleTouchEnd = () => {
+      resetPointer()
+    }
+
+    const handleTouchCancel = () => {
+      resetPointer()
     }
 
     const handleOrientationChange = () => {
@@ -141,11 +159,17 @@ export const ParticleCanvas = () => {
       init()
     }
 
+    const visualViewport = window.visualViewport
+
     window.addEventListener("mousemove", handleMouseMove)
     window.addEventListener("mouseleave", handleMouseLeave)
-    window.addEventListener("touchmove", handleTouchMove)
+    window.addEventListener("touchstart", handleTouchStart, { passive: true })
+    window.addEventListener("touchmove", handleTouchMove, { passive: true })
+    window.addEventListener("touchend", handleTouchEnd, { passive: true })
+    window.addEventListener("touchcancel", handleTouchCancel, { passive: true })
     window.addEventListener("resize", handleResize)
     window.addEventListener("orientationchange", handleOrientationChange)
+    visualViewport?.addEventListener("resize", handleResize)
 
     // Also listen for visibility change to re-init when tab becomes visible
     const handleVisibilityChange = () => {
@@ -162,9 +186,13 @@ export const ParticleCanvas = () => {
     return () => {
       window.removeEventListener("mousemove", handleMouseMove)
       window.removeEventListener("mouseleave", handleMouseLeave)
+      window.removeEventListener("touchstart", handleTouchStart)
       window.removeEventListener("touchmove", handleTouchMove)
+      window.removeEventListener("touchend", handleTouchEnd)
+      window.removeEventListener("touchcancel", handleTouchCancel)
       window.removeEventListener("resize", handleResize)
       window.removeEventListener("orientationchange", handleOrientationChange)
+      visualViewport?.removeEventListener("resize", handleResize)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
       cancelAnimationFrame(animationFrameId)
     }
@@ -173,13 +201,11 @@ export const ParticleCanvas = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-screen h-screen pointer-events-none"
+      className="fixed inset-0 w-full h-full pointer-events-none"
       style={{ 
         background: "#16181D",
-        minWidth: "100vw",
-        minHeight: "100vh",
-        width: "100%",
-        height: "100%"
+        width: "100vw",
+        height: "100dvh"
       }}
     />
   )
