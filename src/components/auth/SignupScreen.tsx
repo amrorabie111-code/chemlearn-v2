@@ -24,9 +24,16 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSwitchToLogin }) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const safeName = name.trim();
+    const safeEmail = email.trim().toLowerCase();
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (!safeName || !safeEmail) {
+      setError('Please enter your name and email.');
       return;
     }
 
@@ -38,9 +45,17 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSwitchToLogin }) =
     setIsLoading(true);
 
     try {
-      await signup(email, password, name);
+      await signup(safeEmail, password, safeName);
     } catch (err: any) {
-      setError(err.message || 'Failed to create account. Please try again.');
+      if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered. Try logging in.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password is too weak. Use at least 6 characters.');
+      } else {
+        setError(err.message || 'Failed to create account. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

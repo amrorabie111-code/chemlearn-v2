@@ -23,7 +23,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToLeader
   const { language, setLanguage } = useLanguage();
   const t = translations[language];
   const [showAvatarGrid, setShowAvatarGrid] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
   const [selectError, setSelectError] = useState('');
 
   // Sync theme from user data on mount
@@ -54,36 +53,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToLeader
   const closeAvatarGrid = () => {
     setShowAvatarGrid(false);
     setSelectError('');
-    setIsSelecting(false);
-  };
-
-  const handleThemeToggle = async () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    // Sync to Firestore
-    await updateUserData({ theme: newTheme });
   };
 
   const handleAvatarSelect = async (path: string) => {
-    setIsSelecting(true);
     setSelectError('');
-    
-    // Timeout fallback - reset after 5 seconds if stuck
-    const timeoutId = setTimeout(() => {
-      setIsSelecting(false);
-      setSelectError('Timed out. Please try again.');
-    }, 5000);
-    
+
+    // Close immediately for a faster UX; avatar is already updated optimistically.
+    setShowAvatarGrid(false);
     try {
       await uploadAvatar(path);
-      clearTimeout(timeoutId);
-      setShowAvatarGrid(false);
     } catch (error: any) {
-      clearTimeout(timeoutId);
       console.error('Failed to select avatar:', error);
+      // Reopen so the user can retry if persistence fails.
+      setShowAvatarGrid(true);
       setSelectError(error.message || 'Failed to save. Try again.');
-    } finally {
-      setIsSelecting(false);
     }
   };
 
@@ -136,44 +119,37 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToLeader
               )}
 
               {/* Avatar Grid */}
-              {isSelecting ? (
-                <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
-                  <div className="w-10 h-10 border-[3px] border-primary-container/30 border-t-primary-container rounded-full animate-spin" />
-                  <p className="text-white/60 text-sm">Saving...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-5 gap-3">
-                  {AVATAR_PATHS.map((path, index) => (
-                    <button
-                      key={path}
-                      onClick={() => handleAvatarSelect(path)}
-                      className={`relative aspect-square rounded-2xl overflow-hidden transition-all hover:scale-105 ${
-                        user.avatar === path 
-                          ? 'ring-2 ring-primary-container ring-offset-2 ring-offset-[#1a1d26]' 
-                          : 'opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img
-                        src={path}
-                        alt={`Avatar ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                      {user.avatar === path && (
-                        <div className="absolute inset-0 bg-primary-container/20 flex items-center justify-center">
-                          <div className="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center">
-                            <svg className="w-4 h-4 text-on-primary-container" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
+              <div className="grid grid-cols-5 gap-3">
+                {AVATAR_PATHS.map((path, index) => (
+                  <button
+                    key={path}
+                    onClick={() => handleAvatarSelect(path)}
+                    className={`relative aspect-square rounded-2xl overflow-hidden transition-all hover:scale-105 ${
+                      user.avatar === path 
+                        ? 'ring-2 ring-primary-container ring-offset-2 ring-offset-[#1a1d26]' 
+                        : 'opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={path}
+                      alt={`Avatar ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    {user.avatar === path && (
+                      <div className="absolute inset-0 bg-primary-container/20 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center">
+                          <svg className="w-4 h-4 text-on-primary-container" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
                         </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
             </motion.div>
           </motion.div>
         )}

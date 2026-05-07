@@ -7,7 +7,7 @@ import {
   User as FirebaseUser,
   updateProfile
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { UserData, AuthState, calculateQuizXP } from '../types/user';
 
@@ -68,6 +68,24 @@ const setCachedUserData = (user: UserData) => {
   }
 };
 
+const normalizeUserData = (data: Partial<UserData>, firebaseUser: FirebaseUser): UserData => ({
+  uid: firebaseUser.uid,
+  name: data.name || firebaseUser.displayName || 'User',
+  email: data.email || firebaseUser.email || '',
+  avatar: data.avatar || '',
+  xp: typeof data.xp === 'number' ? data.xp : 0,
+  lessonsCompleted: typeof data.lessonsCompleted === 'number' ? data.lessonsCompleted : 0,
+  progress: data.progress || {},
+  completedCourses: data.completedCourses || {},
+  quizHistory: data.quizHistory || {},
+  quizStatus: data.quizStatus || {},
+  currentQuiz: data.currentQuiz || null,
+  theme: data.theme || 'dark',
+  language: data.language || 'ar',
+  createdAt: data.createdAt || new Date(),
+  updatedAt: data.updatedAt || new Date()
+});
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -90,8 +108,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ]);
       
       if (userDoc && userDoc.exists()) {
-        const data = userDoc.data() as UserData;
-        const loadedUser = { ...data, uid: firebaseUser.uid };
+        const data = userDoc.data() as Partial<UserData>;
+        const loadedUser = normalizeUserData(data, firebaseUser);
         setCachedUserData(loadedUser);
         return loadedUser;
       }
@@ -171,8 +189,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string) => {
     try {
+      const safeEmail = email.trim().toLowerCase();
+      const safePassword = password.trim();
+      if (!safeEmail || !safePassword) {
+        throw new Error('Please enter both email and password.');
+      }
+
       console.log('Attempting login...');
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, safeEmail, safePassword);
       console.log('Login successful, user:', result.user.uid);
       
       // Force auth state update since listener might be delayed
@@ -207,17 +231,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signup = async (email: string, password: string, name: string) => {
-    const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(firebaseUser, { displayName: name });
-    
-    const newUser = createInitialUserData(firebaseUser.uid, email, name);
+    const safeName = name.trim();
+    const safeEmail = email.trim().toLowerCase();
+
+    const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, safeEmail, password);
+    await updateProfile(firebaseUser, { displayName: safeName });
+
+    const newUser = createInitialUserData(firebaseUser.uid, safeEmail, safeName);
     try {
-      await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+      await setDoc(doc(db, 'users', firebaseUser.uid), newUser, { merge: true });
       setCachedUserData(newUser);
     } catch (firestoreError) {
       console.warn('Firestore write failed during signup:', firestoreError);
       setCachedUserData(newUser);
     }
+
+    setState({
+      user: newUser,
+      isLoading: false,
+      isAuthenticated: true
+    });
   };
 
   const logout = async () => {
@@ -226,37 +259,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateUserData = async (updates: Partial<UserData>) => {
     if (!state.user) return;
-    
+
+    const currentUser = state.user;
+    const mergedUser = { ...currentUser, ...updates, updatedAt: new Date() };
+
     // Update local state immediately for responsive UI
-    setState(prev => {
-      const updatedUser = prev.user ? { ...prev.user, ...updates, updatedAt: new Date() } : null;
-      if (updatedUser) setCachedUserData(updatedUser);
-      return {
-        ...prev,
-        user: updatedUser
-      };
-    });
-    
-    // Try to update Firestore with a timeout
+    setCachedUserData(mergedUser);
+    setState(prev => ({ ...prev, user: mergedUser }));
+
+    // Upsert in Firestore with a timeout; merge prevents missing-doc failures.
     try {
-      const userRef = doc(db, 'users', state.user.uid);
-      
+      const userRef = doc(db, 'users', currentUser.uid);
+
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Firestore update timeout')), 8000);
       });
-      
+
       await Promise.race([
-        updateDoc(userRef, {
-          ...updates,
-          updatedAt: new Date()
-        }),
+        setDoc(userRef, mergedUser, { merge: true }),
         timeoutPromise
       ]);
-      
+
       console.log('Firestore update successful');
     } catch (error: any) {
       console.warn('Firestore update failed (using local only):', error.message);
-      // Local cache already contains the latest user state
     }
   };
 

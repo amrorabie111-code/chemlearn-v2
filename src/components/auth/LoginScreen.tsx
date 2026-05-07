@@ -22,11 +22,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignup }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const safeEmail = email.trim();
+    const safePassword = password.trim();
+    if (!safeEmail || !safePassword) {
+      setError('Please enter both email and password.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       console.log('Login form submitted');
-      await login(email, password);
+      await login(safeEmail, safePassword);
       console.log('Login function completed');
     } catch (err: any) {
       console.error('Login error caught:', err);
@@ -40,6 +48,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToSignup }) =>
         errorMessage = 'Invalid email or password. Please check and try again.';
       } else if (err.code === 'auth/too-many-requests') {
         errorMessage = 'Too many failed attempts. Please try again later.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
       } else if (err.message) {
         errorMessage = err.message;
       }
