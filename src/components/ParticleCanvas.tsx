@@ -16,6 +16,7 @@ export const ParticleCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const particles = useRef<Particle[]>([])
   const mouse = useRef({ x: -1000, y: -1000, radius: 120 })
+  const isPointerActive = useRef(false)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -29,6 +30,7 @@ export const ParticleCanvas = () => {
     const resetPointer = () => {
       mouse.current.x = -1000
       mouse.current.y = -1000
+      isPointerActive.current = false
     }
 
     const init = () => {
@@ -74,7 +76,14 @@ export const ParticleCanvas = () => {
         const dy = mouse.current.y - p.y
         const dist = Math.sqrt(dx * dx + dy * dy)
 
-        if (dist < mouse.current.radius) {
+        if (!isPointerActive.current) {
+          // Immediately snap back to origin when touch/mouse is released
+          p.x += (p.originX - p.x) * 0.25
+          p.y += (p.originY - p.y) * 0.25
+          p.vx = 0
+          p.vy = 0
+          p.targetColor = { r: 255, g: 255, b: 255 }
+        } else if (dist < mouse.current.radius) {
           // Push away effect
           const force = (mouse.current.radius - dist) / mouse.current.radius
           const angle = Math.atan2(dy, dx)
@@ -120,12 +129,14 @@ export const ParticleCanvas = () => {
     const handleMouseMove = (e: MouseEvent) => {
       mouse.current.x = e.clientX
       mouse.current.y = e.clientY
+      isPointerActive.current = true
     }
 
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
         mouse.current.x = e.touches[0].clientX
         mouse.current.y = e.touches[0].clientY
+        isPointerActive.current = true
       }
     }
 
@@ -133,6 +144,7 @@ export const ParticleCanvas = () => {
       if (e.touches.length > 0) {
         mouse.current.x = e.touches[0].clientX
         mouse.current.y = e.touches[0].clientY
+        isPointerActive.current = true
       }
     }
 
