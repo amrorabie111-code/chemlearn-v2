@@ -27,7 +27,7 @@ export interface ChemicalElement {
   imageUrl: string;
 }
 
-export type Screen = 'welcome' | 'auth' | 'elements' | 'search' | 'courses' | 'quiz' | 'detail' | 'course-detail' | 'lesson' | 'profile' | 'leaderboard';
+export type Screen = 'welcome' | 'auth' | 'elements' | 'search' | 'courses' | 'quiz' | 'detail' | 'course-detail' | 'lesson' | 'profile' | 'leaderboard' | 'privacy-policy' | 'about';
 
 export interface LessonSection {
   id: string;

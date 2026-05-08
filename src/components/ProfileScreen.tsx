@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, Trophy, LogOut, ChevronRight, 
-  Languages, Crown, Star, Sparkles, GraduationCap, X
+  Languages, Crown, Star, Sparkles, GraduationCap, X, Shield, Info
 } from 'lucide-react';
 import { DayNightToggle } from './DayNightToggle';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,12 +12,18 @@ import { getLevelInfo, UserLevel } from '../types/user';
 
 interface ProfileScreenProps {
   onNavigateToLeaderboard: () => void;
+  onNavigateToPrivacyPolicy: () => void;
+  onNavigateToAbout: () => void;
 }
 
 // Generate avatar paths - assuming avatars are named avatar1.png through avatar30.png
 const AVATAR_PATHS = Array.from({ length: 30 }, (_, i) => `/avatars/avatar${i + 1}.png`);
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToLeaderboard }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({
+  onNavigateToLeaderboard,
+  onNavigateToPrivacyPolicy,
+  onNavigateToAbout
+}) => {
   const { user, logout, uploadAvatar, updateUserData } = useAuth();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
@@ -267,6 +273,31 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigateToLeader
             <div className="flex items-center gap-3">
               <Languages className="w-5 h-5 text-white/60" />
               <span className="text-white">{language === 'ar' ? 'English' : 'العربية'}</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white/40" />
+          </button>
+        </div>
+
+        {/* Legal and Info */}
+        <div className="glass-card rounded-2xl p-4 space-y-3">
+          <button
+            onClick={onNavigateToPrivacyPolicy}
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Shield className="w-5 h-5 text-white/60" />
+              <span className="text-white">Privacy Policy</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white/40" />
+          </button>
+
+          <button
+            onClick={onNavigateToAbout}
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Info className="w-5 h-5 text-white/60" />
+              <span className="text-white">About</span>
             </div>
             <ChevronRight className="w-5 h-5 text-white/40" />
           </button>

@@ -14,6 +14,8 @@ import { LoginScreen, SignupScreen } from './components/auth';
 import { UserProfile } from './components/UserProfile';
 import { ProfileScreen } from './components/ProfileScreen';
 import { LeaderboardScreen } from './components/LeaderboardScreen';
+import { PrivacyPolicyScreen } from './components/PrivacyPolicyScreen';
+import { AboutScreen } from './components/AboutScreen';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { LanguageProvider, useLanguage, translations } from './contexts/LanguageContext';
 import { calculateQuizXP } from './types/user';
@@ -1967,14 +1969,29 @@ function AppContent() {
         return lesson ? <LessonScreen lesson={lesson} onBack={handleBack} onNextLesson={handleNextLesson} /> : null;
       case 'quiz': return <QuizScreen />;
       case 'detail': return selectedElement ? <ElementDetailScreen element={selectedElement} /> : null;
-      case 'profile': return <ProfileScreen onNavigateToLeaderboard={() => navigate({ screen: 'leaderboard' })} />;
+      case 'profile':
+        return (
+          <ProfileScreen
+            onNavigateToLeaderboard={() => navigate({ screen: 'leaderboard' })}
+            onNavigateToPrivacyPolicy={() => navigate({ screen: 'privacy-policy' })}
+            onNavigateToAbout={() => navigate({ screen: 'about' })}
+          />
+        );
       case 'leaderboard': return <LeaderboardScreen onBack={handleBack} />;
+      case 'privacy-policy': return <PrivacyPolicyScreen onBack={handleBack} />;
+      case 'about': return <AboutScreen onBack={handleBack} />;
       default: return null;
     }
   }, [screen, selectedElement, selectedCourseId, selectedLessonId]);
 
   const isWelcome = screen === 'welcome' || screen === 'auth';
-  const isDetail = screen === 'detail' || screen === 'course-detail' || screen === 'lesson' || screen === 'leaderboard';
+  const isDetail =
+    screen === 'detail' ||
+    screen === 'course-detail' ||
+    screen === 'lesson' ||
+    screen === 'leaderboard' ||
+    screen === 'privacy-policy' ||
+    screen === 'about';
 
   const handleLogoClick = () => {
     navigate({ screen: 'elements', selectedElementNumber: null, selectedCourseId: null, selectedLessonId: null });
