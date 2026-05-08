@@ -112,6 +112,8 @@ const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, timeoutMe
   return Promise.race([promise, timeoutPromise]);
 };
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const normalizeUserData = (data: Partial<UserData>, firebaseUser: FirebaseUser): UserData => ({
   uid: firebaseUser.uid,
   name: data.name || firebaseUser.displayName || 'User',
@@ -156,6 +158,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loadUserDataWithRetry = async (firebaseUser: FirebaseUser): Promise<UserData | null> => {
+    const attempts = 3;
+    for (let i = 0; i < attempts; i += 1) {
+      const userData = await loadUserData(firebaseUser);
+      if (userData) return userData;
+      if (i < attempts - 1) {
+        await wait(600 * (i + 1));
+      }
+    }
+    return null;
+  };
+
   // Listen to auth state changes
   useEffect(() => {
     console.log('Setting up auth listener...');
@@ -163,7 +177,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Auth state changed, user:', firebaseUser?.uid || 'null');
       if (firebaseUser) {
         try {
-          const remoteUser = await loadUserData(firebaseUser);
+          const remoteUser = await loadUserDataWithRetry(firebaseUser);
           const cachedUser = getCachedUserData(firebaseUser.uid);
           const bestUser = pickBestUserData(remoteUser, cachedUser);
 
@@ -190,14 +204,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   firebaseUser.email || '',
                   firebaseUser.displayName || 'User'
                 );
-
-            if (!legacyCached) {
-              try {
-                await setDoc(doc(db, 'users', firebaseUser.uid), fallbackUser);
-              } catch (firestoreError) {
-                console.warn('Firestore write failed, using local data:', firestoreError);
-              }
-            }
+            // Do not write fallback data here; this path can happen during transient
+            // network issues and must never overwrite existing remote progress.
+            setCachedUserData(fallbackUser);
 
             setState({
               user: fallbackUser,
@@ -247,15 +256,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Login successful, user:', result.user.uid);
       
       // Force auth state update since listener might be delayed
-      const userData = await loadUserData(result.user);
-      if (userData) {
+      const remoteUser = await loadUserDataWithRetry(result.user);
+      const cachedUser = getCachedUserData(result.user.uid);
+      const bestUser = pickBestUserData(remoteUser, cachedUser);
+
+      if (bestUser) {
         setState({
-          user: userData,
+          user: bestUser,
           isLoading: false,
           isAuthenticated: true
         });
       } else {
-        const cachedUser = getCachedUserData(result.user.uid);
         const fallbackUser = cachedUser?.uid === result.user.uid
           ? cachedUser
           : createInitialUserData(
