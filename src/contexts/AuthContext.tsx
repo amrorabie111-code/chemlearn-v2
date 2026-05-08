@@ -159,12 +159,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loadUserDataWithRetry = async (firebaseUser: FirebaseUser): Promise<UserData | null> => {
-    const attempts = 3;
+    const attempts = 2;
     for (let i = 0; i < attempts; i += 1) {
       const userData = await loadUserData(firebaseUser);
       if (userData) return userData;
       if (i < attempts - 1) {
-        await wait(600 * (i + 1));
+        await wait(300 * (i + 1));
       }
     }
     return null;
@@ -249,6 +249,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const safePassword = password.trim();
       if (!safeEmail || !safePassword) {
         throw new Error('Please enter both email and password.');
+      }
+
+      // Make account switching deterministic when another session is active.
+      if (auth.currentUser && auth.currentUser.email?.toLowerCase() !== safeEmail) {
+        await signOut(auth);
       }
 
       console.log('Attempting login...');

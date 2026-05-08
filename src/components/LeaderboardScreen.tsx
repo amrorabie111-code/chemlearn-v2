@@ -67,6 +67,16 @@ export const LeaderboardScreen: React.FC<{ onBack: () => void }> = ({ onBack }) 
 
     const fetchLeaderboard = async () => {
       try {
+        if (isMounted && currentUser) {
+          setLeaderboard([{
+            uid: currentUser.uid,
+            name: currentUser.name,
+            avatar: currentUser.avatar,
+            xp: currentUser.xp
+          }]);
+          setLoading(false);
+        }
+
         const cached = getCachedLeaderboard();
         if (cached && isMounted) {
           setLeaderboard(normalize(cached));
@@ -74,7 +84,7 @@ export const LeaderboardScreen: React.FC<{ onBack: () => void }> = ({ onBack }) 
         }
 
         // Read all users then sort client-side so users missing xp are still visible.
-        const snapshot = await withTimeout(getDocs(collection(db, 'users')), 6000);
+        const snapshot = await withTimeout(getDocs(collection(db, 'users')), 2500);
         const users = snapshot.docs.map((doc) => ({
           uid: doc.id,
           name: doc.data().name || 'User',
