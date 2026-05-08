@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Trophy, Crown, Medal, ArrowLeft, User } from 'lucide-react';
-import { getDocs, collection, query, orderBy, limit } from 'firebase/firestore';
+import { getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -14,6 +14,9 @@ interface LeaderboardUser {
   xp: number;
 }
 
+const LEADERBOARD_CACHE_KEY = 'chemistry_beacon_leaderboard_cache';
+const LEADERBOARD_CACHE_TTL_MS = 2 * 60 * 1000;
+
 export const LeaderboardScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { user: currentUser } = useAuth();
   const { theme } = useTheme();
@@ -23,26 +26,89 @@ export const LeaderboardScreen: React.FC<{ onBack: () => void }> = ({ onBack }) 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const getCachedLeaderboard = (): LeaderboardUser[] | null => {
+      try {
+        const raw = localStorage.getItem(LEADERBOARD_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as { timestamp: number; data: LeaderboardUser[] };
+        if (!parsed?.timestamp || !Array.isArray(parsed?.data)) return null;
+        if (Date.now() - parsed.timestamp > LEADERBOARD_CACHE_TTL_MS) return null;
+        return parsed.data;
+      } catch {
+        return null;
+      }
+    };
+
+    const setCachedLeaderboard = (data: LeaderboardUser[]) => {
+      try {
+        localStorage.setItem(
+          LEADERBOARD_CACHE_KEY,
+          JSON.stringify({ timestamp: Date.now(), data })
+        );
+      } catch {
+        // Ignore cache write errors
+      }
+    };
+
+    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Leaderboard timeout')), timeoutMs);
+      });
+      return Promise.race([promise, timeoutPromise]);
+    };
+
+    const normalize = (users: LeaderboardUser[]) =>
+      users
+        .filter((entry) => entry.uid)
+        .sort((a, b) => b.xp - a.xp)
+        .slice(0, 50);
+
     const fetchLeaderboard = async () => {
       try {
-        const q = query(collection(db, 'users'), orderBy('xp', 'desc'), limit(50));
-        const snapshot = await getDocs(q);
-        const users = snapshot.docs.map(doc => ({
+        const cached = getCachedLeaderboard();
+        if (cached && isMounted) {
+          setLeaderboard(normalize(cached));
+          setLoading(false);
+        }
+
+        // Read all users then sort client-side so users missing xp are still visible.
+        const snapshot = await withTimeout(getDocs(collection(db, 'users')), 6000);
+        const users = snapshot.docs.map((doc) => ({
           uid: doc.id,
-          name: doc.data().name,
-          avatar: doc.data().avatar,
-          xp: doc.data().xp || 0
+          name: doc.data().name || 'User',
+          avatar: doc.data().avatar || '',
+          xp: Number(doc.data().xp || 0)
         })) as LeaderboardUser[];
-        setLeaderboard(users);
+
+        const normalizedUsers = normalize(users);
+        if (!isMounted) return;
+
+        setLeaderboard(normalizedUsers);
+        setCachedLeaderboard(normalizedUsers);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
+        // Ensure at least current user appears if query is blocked/slow.
+        if (isMounted && currentUser) {
+          setLeaderboard([{
+            uid: currentUser.uid,
+            name: currentUser.name,
+            avatar: currentUser.avatar,
+            xp: currentUser.xp
+          }]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchLeaderboard();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser]);
 
   const getRankStyle = (rank: number) => {
     switch (rank) {

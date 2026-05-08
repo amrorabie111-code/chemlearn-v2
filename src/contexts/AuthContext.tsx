@@ -31,7 +31,9 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_CACHE_KEY = 'chemistry_beacon_user_data';
+const USER_CACHE_KEY_PREFIX = 'chemistry_beacon_user_data';
+
+const getCacheKey = (uid?: string) => (uid ? `${USER_CACHE_KEY_PREFIX}_${uid}` : USER_CACHE_KEY_PREFIX);
 
 const createInitialUserData = (uid: string, email: string, name: string): UserData => ({
   uid,
@@ -51,10 +53,14 @@ const createInitialUserData = (uid: string, email: string, name: string): UserDa
   updatedAt: new Date()
 });
 
-const getCachedUserData = (): UserData | null => {
+const getCachedUserData = (uid?: string): UserData | null => {
   try {
-    const cached = localStorage.getItem(USER_CACHE_KEY);
-    return cached ? (JSON.parse(cached) as UserData) : null;
+    const scoped = localStorage.getItem(getCacheKey(uid));
+    if (scoped) return JSON.parse(scoped) as UserData;
+
+    // Backward compatibility with old cache key.
+    const legacy = localStorage.getItem(getCacheKey());
+    return legacy ? (JSON.parse(legacy) as UserData) : null;
   } catch {
     return null;
   }
@@ -62,10 +68,48 @@ const getCachedUserData = (): UserData | null => {
 
 const setCachedUserData = (user: UserData) => {
   try {
-    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+    localStorage.setItem(getCacheKey(user.uid), JSON.stringify(user));
+    // Keep legacy key in sync for older sessions.
+    localStorage.setItem(getCacheKey(), JSON.stringify(user));
   } catch {
     // Ignore cache write errors
   }
+};
+
+const toMs = (value: unknown): number => {
+  if (!value) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return Date.parse(value) || 0;
+  if (value instanceof Date) return value.getTime();
+  return 0;
+};
+
+const pickBestUserData = (remoteUser: UserData | null, cachedUser: UserData | null): UserData | null => {
+  if (!remoteUser && !cachedUser) return null;
+  if (!remoteUser) return cachedUser;
+  if (!cachedUser) return remoteUser;
+
+  if (cachedUser.uid !== remoteUser.uid) return remoteUser;
+
+  const remoteUpdated = toMs(remoteUser.updatedAt);
+  const cachedUpdated = toMs(cachedUser.updatedAt);
+
+  if (cachedUpdated > remoteUpdated) return cachedUser;
+  if (remoteUpdated > cachedUpdated) return remoteUser;
+
+  const remoteProgress = Object.keys(remoteUser.progress || {}).length;
+  const cachedProgress = Object.keys(cachedUser.progress || {}).length;
+  if (cachedProgress > remoteProgress) return cachedUser;
+
+  return remoteUser;
+};
+
+const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> => {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]);
 };
 
 const normalizeUserData = (data: Partial<UserData>, firebaseUser: FirebaseUser): UserData => ({
@@ -96,16 +140,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Load user data from Firestore with timeout
   const loadUserData = async (firebaseUser: FirebaseUser): Promise<UserData | null> => {
     try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise<null>((_, reject) => {
-        setTimeout(() => reject(new Error('Firestore timeout')), 5000);
-      });
-      
       // Race between Firestore get and timeout
-      const userDoc = await Promise.race([
-        getDoc(doc(db, 'users', firebaseUser.uid)),
-        timeoutPromise
-      ]);
+      const userDoc = await withTimeout(getDoc(doc(db, 'users', firebaseUser.uid)), 5000, 'Firestore timeout');
       
       if (userDoc && userDoc.exists()) {
         const data = userDoc.data() as Partial<UserData>;
@@ -127,24 +163,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Auth state changed, user:', firebaseUser?.uid || 'null');
       if (firebaseUser) {
         try {
-          const userData = await loadUserData(firebaseUser);
-          if (userData) {
+          const remoteUser = await loadUserData(firebaseUser);
+          const cachedUser = getCachedUserData(firebaseUser.uid);
+          const bestUser = pickBestUserData(remoteUser, cachedUser);
+
+          if (bestUser) {
+            setCachedUserData(bestUser);
             setState({
-              user: userData,
+              user: bestUser,
               isLoading: false,
               isAuthenticated: true
             });
+
+            // If local cache is newer/richer, sync it back in background.
+            if (cachedUser && remoteUser && bestUser === cachedUser) {
+              setDoc(doc(db, 'users', firebaseUser.uid), cachedUser, { merge: true }).catch((err) => {
+                console.warn('Background sync failed:', err);
+              });
+            }
           } else {
-            const cachedUser = getCachedUserData();
-            const fallbackUser = cachedUser?.uid === firebaseUser.uid
-              ? cachedUser
+            const legacyCached = getCachedUserData(firebaseUser.uid);
+            const fallbackUser = legacyCached?.uid === firebaseUser.uid
+              ? legacyCached
               : createInitialUserData(
                   firebaseUser.uid,
                   firebaseUser.email || '',
                   firebaseUser.displayName || 'User'
                 );
 
-            if (!cachedUser) {
+            if (!legacyCached) {
               try {
                 await setDoc(doc(db, 'users', firebaseUser.uid), fallbackUser);
               } catch (firestoreError) {
@@ -160,7 +207,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         } catch (error) {
           console.error('Auth state error:', error);
-          const cachedUser = getCachedUserData();
+          const cachedUser = getCachedUserData(firebaseUser.uid);
           const fallbackUser = cachedUser?.uid === firebaseUser.uid
             ? cachedUser
             : createInitialUserData(
@@ -208,7 +255,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           isAuthenticated: true
         });
       } else {
-        const cachedUser = getCachedUserData();
+        const cachedUser = getCachedUserData(result.user.uid);
         const fallbackUser = cachedUser?.uid === result.user.uid
           ? cachedUser
           : createInitialUserData(
@@ -238,19 +285,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await updateProfile(firebaseUser, { displayName: safeName });
 
     const newUser = createInitialUserData(firebaseUser.uid, safeEmail, safeName);
-    try {
-      await setDoc(doc(db, 'users', firebaseUser.uid), newUser, { merge: true });
-      setCachedUserData(newUser);
-    } catch (firestoreError) {
-      console.warn('Firestore write failed during signup:', firestoreError);
-      setCachedUserData(newUser);
-    }
-
+    setCachedUserData(newUser);
     setState({
       user: newUser,
       isLoading: false,
       isAuthenticated: true
     });
+
+    try {
+      await withTimeout(
+        setDoc(doc(db, 'users', firebaseUser.uid), newUser, { merge: true }),
+        7000,
+        'Saving profile timed out'
+      );
+    } catch (firestoreError) {
+      console.warn('Firestore write failed during signup:', firestoreError);
+    }
   };
 
   const logout = async () => {
@@ -270,15 +320,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Upsert in Firestore with a timeout; merge prevents missing-doc failures.
     try {
       const userRef = doc(db, 'users', currentUser.uid);
-
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Firestore update timeout')), 8000);
-      });
-
-      await Promise.race([
-        setDoc(userRef, mergedUser, { merge: true }),
-        timeoutPromise
-      ]);
+      await withTimeout(setDoc(userRef, mergedUser, { merge: true }), 8000, 'Firestore update timeout');
 
       console.log('Firestore update successful');
     } catch (error: any) {
