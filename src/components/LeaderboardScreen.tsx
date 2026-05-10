@@ -52,13 +52,6 @@ export const LeaderboardScreen: React.FC<{ onBack: () => void }> = ({ onBack }) 
       }
     };
 
-    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Leaderboard timeout')), timeoutMs);
-      });
-      return Promise.race([promise, timeoutPromise]);
-    };
-
     const normalize = (users: LeaderboardUser[]) =>
       users
         .filter((entry) => entry.uid)
@@ -66,25 +59,18 @@ export const LeaderboardScreen: React.FC<{ onBack: () => void }> = ({ onBack }) 
         .slice(0, 50);
 
     const fetchLeaderboard = async () => {
+      let hasCachedLeaderboard = false;
       try {
-        if (isMounted && currentUser) {
-          setLeaderboard([{
-            uid: currentUser.uid,
-            name: currentUser.name,
-            avatar: currentUser.avatar,
-            xp: currentUser.xp
-          }]);
-          setLoading(false);
-        }
-
         const cached = getCachedLeaderboard();
         if (cached && isMounted) {
+          hasCachedLeaderboard = true;
           setLeaderboard(normalize(cached));
           setLoading(false);
         }
 
         // Read all users then sort client-side so users missing xp are still visible.
-        const snapshot = await withTimeout(getDocs(collection(db, 'users')), 2500);
+        // Avoid an aggressive timeout here; slow networks previously caused false fallbacks.
+        const snapshot = await getDocs(collection(db, 'users'));
         const users = snapshot.docs.map((doc) => ({
           uid: doc.id,
           name: doc.data().name || 'User',
@@ -99,8 +85,9 @@ export const LeaderboardScreen: React.FC<{ onBack: () => void }> = ({ onBack }) 
         setCachedLeaderboard(normalizedUsers);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
-        // Ensure at least current user appears if query is blocked/slow.
-        if (isMounted && currentUser) {
+
+        // If fetch fails and no cached leaderboard is available, show current user as fallback.
+        if (isMounted && !hasCachedLeaderboard && currentUser) {
           setLeaderboard([{
             uid: currentUser.uid,
             name: currentUser.name,
