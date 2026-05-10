@@ -259,9 +259,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Attempting login...');
       const result = await signInWithEmailAndPassword(auth, safeEmail, safePassword);
       console.log('Login successful, user:', result.user.uid);
-      
-      // Force auth state update since listener might be delayed
-      const remoteUser = await loadUserDataWithRetry(result.user);
+
+      // Always load user document after login; create it if missing.
+      const userRef = doc(db, 'users', result.user.uid);
+      const userDoc = await withTimeout(getDoc(userRef), 8000, 'Loading profile timed out');
+
+      let remoteUser: UserData | null = null;
+      if (userDoc.exists()) {
+        remoteUser = normalizeUserData(userDoc.data() as Partial<UserData>, result.user);
+      } else {
+        const now = new Date();
+        const firestoreUserDoc = {
+          uid: result.user.uid,
+          name: result.user.displayName || 'User',
+          email: result.user.email || safeEmail,
+          avatar: '',
+          xp: 0,
+          level: 1,
+          completedLessons: [],
+          lessonsCompleted: 0,
+          progress: {},
+          completedCourses: {},
+          quizHistory: {},
+          quizStatus: {},
+          currentQuiz: null,
+          theme: 'dark',
+          language: 'ar',
+          createdAt: now,
+          updatedAt: now
+        };
+
+        await withTimeout(
+          setDoc(userRef, firestoreUserDoc, { merge: true }),
+          8000,
+          'Creating missing profile timed out'
+        );
+        remoteUser = normalizeUserData(firestoreUserDoc as Partial<UserData>, result.user);
+      }
+
       const cachedUser = getCachedUserData(result.user.uid);
       const bestUser = pickBestUserData(remoteUser, cachedUser);
 
@@ -300,7 +335,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, safeEmail, password);
     await updateProfile(firebaseUser, { displayName: safeName });
 
-    const newUser = createInitialUserData(firebaseUser.uid, safeEmail, safeName);
+    const now = new Date();
+    const firestoreUserDoc = {
+      uid: firebaseUser.uid,
+      name: safeName,
+      email: safeEmail,
+      avatar: '',
+      xp: 0,
+      level: 1,
+      completedLessons: [],
+      lessonsCompleted: 0,
+      progress: {},
+      completedCourses: {},
+      quizHistory: {},
+      quizStatus: {},
+      currentQuiz: null,
+      theme: 'dark',
+      language: 'ar',
+      createdAt: now,
+      updatedAt: now
+    };
+    const newUser = normalizeUserData(firestoreUserDoc as Partial<UserData>, firebaseUser);
     setCachedUserData(newUser);
     setState({
       user: newUser,
@@ -310,7 +365,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     try {
       await withTimeout(
-        setDoc(doc(db, 'users', firebaseUser.uid), newUser, { merge: true }),
+        setDoc(doc(db, 'users', firebaseUser.uid), firestoreUserDoc, { merge: true }),
         7000,
         'Saving profile timed out'
       );
