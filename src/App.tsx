@@ -1138,6 +1138,34 @@ const LessonScreen = ({ lesson, onBack, onNextLesson }: { lesson: Lesson, onBack
 
   const currentQuestion = localizedLesson.quiz?.[currentQuestionIndex];
 
+  const getEmbeddableVideoUrl = (videoUrl?: string): string | null => {
+    if (!videoUrl) return null;
+
+    try {
+      const parsedUrl = new URL(videoUrl);
+      const hostname = parsedUrl.hostname.replace(/^www\./, '');
+
+      if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
+        if (parsedUrl.pathname === '/watch') {
+          const videoId = parsedUrl.searchParams.get('v');
+          return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+        }
+        if (parsedUrl.pathname.startsWith('/embed/')) {
+          return videoUrl;
+        }
+      }
+
+      if (hostname === 'youtu.be') {
+        const videoId = parsedUrl.pathname.replace('/', '');
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+      }
+
+      return videoUrl;
+    } catch {
+      return null;
+    }
+  };
+
   // Helper to highlight keywords in text
   const renderHighlightedText = (text: string, highlights?: string[]) => {
     if (!highlights || highlights.length === 0) return text;
@@ -1363,37 +1391,42 @@ const LessonScreen = ({ lesson, onBack, onNextLesson }: { lesson: Lesson, onBack
               );
 
             case 'video':
+              const embeddableVideoUrl = getEmbeddableVideoUrl(section.videoUrl);
               return (
                 <div key={section.id} className="space-y-3">
                   {section.content && (
                     <p className="text-white/80 text-base leading-relaxed">{section.content}</p>
                   )}
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video bg-black/50 group cursor-pointer"
-                    onClick={() => {
-                      if (section.videoUrl) {
-                        window.open(section.videoUrl, '_blank');
-                      }
-                    }}>
-                    {section.videoThumbnail ? (
-                      <img
-                        src={section.videoThumbnail}
-                        alt={section.videoTitle || 'Video thumbnail'}
-                        className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                  {embeddableVideoUrl ? (
+                    <div className="rounded-2xl overflow-hidden shadow-lg aspect-video bg-black/50">
+                      <iframe
+                        src={embeddableVideoUrl}
+                        title={section.videoTitle || t.watchVideo}
+                        className="w-full h-full border-0"
+                        loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                        <Play className="w-16 h-16 text-white/60" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                        <Play className="w-8 h-8 text-white fill-white" />
+                    </div>
+                  ) : (
+                    <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video bg-black/50 group">
+                      {section.videoThumbnail ? (
+                        <img
+                          src={section.videoThumbnail}
+                          alt={section.videoTitle || 'Video thumbnail'}
+                          className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                          <Play className="w-16 h-16 text-white/60" />
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                        <p className="text-white font-medium text-sm">{section.videoTitle || t.watchVideo}</p>
                       </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                      <p className="text-white font-medium text-sm">{section.videoTitle || t.watchVideo}</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               );
 
