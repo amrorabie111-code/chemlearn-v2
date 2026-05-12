@@ -1882,7 +1882,7 @@ function AppContent() {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = translations[language];
-  const [screen, setScreen] = useState<Screen>('elements');
+  const [screen, setScreen] = useState<Screen>('welcome');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [showCourseAccessModal, setShowCourseAccessModal] = useState(false);
   const [selectedElement, setSelectedElement] = useState<ChemicalElement | null>(null);
@@ -1940,10 +1940,10 @@ function AppContent() {
   // Browser / mobile back button (popstate)
   useEffect(() => {
     // Ensure there is always a baseline app state.
-    replaceHistoryState({ screen: 'elements' });
+    replaceHistoryState({ screen: 'welcome' });
 
     const onPopState = (e: PopStateEvent) => {
-      const state = (e.state as NavState | null) || { screen: 'elements' };
+      const state = (e.state as NavState | null) || { screen: 'welcome' };
       isHandlingPopState.current = true;
       applyNavState(state);
       isHandlingPopState.current = false;
