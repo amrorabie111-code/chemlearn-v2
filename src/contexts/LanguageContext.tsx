@@ -192,6 +192,11 @@ export const translations = {
     // Welcome
     welcome: "Welcome",
     start: "Start",
+    accountRequired: "Account Required",
+    accountRequiredMessage: "To access courses and quizzes you need a free account",
+    close: "Close",
+    signInToTrackProgress: "Sign in to track your progress",
+    signIn: "Sign In",
 
     // App / UI misc
     appTitle: "Chemistry Beacon",
@@ -365,6 +370,11 @@ export const translations = {
     // Welcome
     welcome: "أهلاً وسهلاً",
     start: "ابدأ",
+    accountRequired: "يجب إنشاء حساب",
+    accountRequiredMessage: "للوصول إلى الدروس والاختبارات يجب إنشاء حساب مجاني",
+    close: "إغلاق",
+    signInToTrackProgress: "سجّل دخولك لتتبع تقدمك",
+    signIn: "تسجيل الدخول",
 
     // App / UI misc
     appTitle: "منارة الكيمياء",

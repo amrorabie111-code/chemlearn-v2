@@ -14,6 +14,8 @@ interface ProfileScreenProps {
   onNavigateToLeaderboard: () => void;
   onNavigateToPrivacyPolicy: () => void;
   onNavigateToAbout: () => void;
+  onNavigateToLogin: () => void;
+  onNavigateToSignup: () => void;
 }
 
 // Generate avatar paths - assuming avatars are named avatar1.png through avatar30.png
@@ -22,7 +24,9 @@ const AVATAR_PATHS = Array.from({ length: 30 }, (_, i) => `/avatars/avatar${i + 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onNavigateToLeaderboard,
   onNavigateToPrivacyPolicy,
-  onNavigateToAbout
+  onNavigateToAbout,
+  onNavigateToLogin,
+  onNavigateToSignup
 }) => {
   const { user, logout, uploadAvatar, updateUserData } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -45,7 +49,29 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   }, [user?.language, setLanguage]);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="pb-32 pt-24 px-6 max-w-lg mx-auto">
+        <div className="glass-card rounded-2xl border border-white/10 p-6 space-y-5 text-center">
+          <p className="text-white/80 text-base">{t.signInToTrackProgress}</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={onNavigateToLogin}
+              className="flex-1 py-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors font-medium"
+            >
+              {t.signIn}
+            </button>
+            <button
+              onClick={onNavigateToSignup}
+              className="flex-1 py-3 rounded-full bg-primary-container text-on-primary-container font-bold hover:opacity-90 transition-opacity"
+            >
+              {t.signup}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const levelInfo = getLevelInfo(user.xp);
   const nextLevelXP = levelInfo.name === 'Crystal' ? user.xp : 

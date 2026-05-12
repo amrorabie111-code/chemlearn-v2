@@ -34,8 +34,12 @@ const AppWithAuth: React.FC = () => {
 };
 
 // --- Auth Screen Wrapper ---
-const AuthScreen: React.FC = () => {
-  const [isLogin, setIsLogin] = useState(true);
+const AuthScreen: React.FC<{ initialMode?: 'login' | 'signup' }> = ({ initialMode = 'login' }) => {
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
+
+  useEffect(() => {
+    setIsLogin(initialMode === 'login');
+  }, [initialMode]);
   
   return isLogin ? (
     <LoginScreen onSwitchToSignup={() => setIsLogin(false)} />
@@ -573,7 +577,11 @@ const saveQuizHistory = (history: Record<string, number[]>) => {
 };
 
 // Quiz Home Screen - Shows course cards (single column like Trending Elements)
-const QuizHomeScreen = ({ onSelectCourse }: { onSelectCourse: (courseId: string) => void }) => {
+const QuizHomeScreen = ({
+  onSelectCourse
+}: {
+  onSelectCourse: (courseId: string) => void;
+}) => {
   const { language } = useLanguage();
   const t = translations[language];
   
@@ -1043,12 +1051,22 @@ const QuizResultScreen = ({
 };
 
 // Main Quiz Screen Component
-const QuizScreen = () => {
+const QuizScreen = ({
+  canAccessQuiz,
+  onRequireAccount
+}: {
+  canAccessQuiz: boolean;
+  onRequireAccount: () => void;
+}) => {
   const [quizState, setQuizState] = useState<'home' | 'intro' | 'play' | 'result'>('home');
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [result, setResult] = useState({ score: 0, total: 0 });
 
   const handleSelectCourse = (courseId: string) => {
+    if (!canAccessQuiz) {
+      onRequireAccount();
+      return;
+    }
     setSelectedCourseId(courseId);
     setQuizState('intro');
   };
@@ -1864,7 +1882,9 @@ function AppContent() {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = translations[language];
-  const [screen, setScreen] = useState<Screen>('welcome');
+  const [screen, setScreen] = useState<Screen>('elements');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [showCourseAccessModal, setShowCourseAccessModal] = useState(false);
   const [selectedElement, setSelectedElement] = useState<ChemicalElement | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
@@ -1919,11 +1939,11 @@ function AppContent() {
 
   // Browser / mobile back button (popstate)
   useEffect(() => {
-    // Make sure we always have a baseline state so back goes to Welcome.
-    replaceHistoryState({ screen: 'welcome' });
+    // Ensure there is always a baseline app state.
+    replaceHistoryState({ screen: 'elements' });
 
     const onPopState = (e: PopStateEvent) => {
-      const state = (e.state as NavState | null) || { screen: 'welcome' };
+      const state = (e.state as NavState | null) || { screen: 'elements' };
       isHandlingPopState.current = true;
       applyNavState(state);
       isHandlingPopState.current = false;
@@ -1934,34 +1954,30 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Redirect to auth if not authenticated after welcome
-  useEffect(() => {
-    console.log('Auth redirect check:', { isLoading, isAuthenticated, screen });
-    if (!isLoading && !isAuthenticated && screen !== 'welcome' && screen !== 'auth') {
-      console.log('Redirecting to auth');
-      // Replace so back from a main tab goes to Welcome (not Auth).
-      if (!isHandlingPopState.current) {
-        replaceHistoryState({ screen: 'auth' as Screen });
-      }
-      setScreen('auth' as Screen);
-    }
-  }, [isAuthenticated, isLoading, screen]);
-
   // Redirect from auth to main app when authenticated
   useEffect(() => {
     console.log('Main redirect check:', { isLoading, isAuthenticated, screen });
     if (!isLoading && isAuthenticated && screen === 'auth') {
       console.log('Redirecting to elements');
-      // Replace auth in history so browser back goes to Welcome.
+      // Replace auth in history so browser back stays in app flow.
       navigate({ screen: 'elements' }, { replace: true });
     }
   }, [isAuthenticated, isLoading, screen]);
+
+  const openAuthScreen = (mode: 'login' | 'signup') => {
+    setAuthMode(mode);
+    navigate({ screen: 'auth' as Screen });
+  };
 
   const handleSelectElement = (el: ChemicalElement) => {
     navigate({ screen: 'detail', selectedElementNumber: el.number });
   };
 
   const handleSelectCourse = (courseId: string) => {
+    if (!isAuthenticated) {
+      setShowCourseAccessModal(true);
+      return;
+    }
     navigate({ screen: 'course-detail', selectedCourseId: courseId });
   };
 
@@ -1970,6 +1986,10 @@ function AppContent() {
   };
 
   const handleSelectLesson = (lessonId: string) => {
+    if (!isAuthenticated) {
+      setShowCourseAccessModal(true);
+      return;
+    }
     navigate({ screen: 'lesson', selectedCourseId, selectedLessonId: lessonId });
   };
 
@@ -1982,17 +2002,13 @@ function AppContent() {
   };
 
   const handleStart = () => {
-    if (isAuthenticated) {
-      navigate({ screen: 'elements' });
-    } else {
-      navigate({ screen: 'auth' as Screen });
-    }
+    navigate({ screen: 'elements' });
   };
 
   const currentScreen = useMemo(() => {
     switch (screen) {
       case 'welcome': return <WelcomeScreen onStart={handleStart} />;
-      case 'auth': return <AuthScreen />;
+      case 'auth': return <AuthScreen initialMode={authMode} />;
       case 'elements': return <ElementsScreen onSelectElement={handleSelectElement} />;
       case 'search': return <SearchScreen onSelectElement={handleSelectElement} />;
         case 'courses': return <CoursesScreen onSelectCourse={handleSelectCourse} />;
@@ -2000,7 +2016,8 @@ function AppContent() {
       case 'lesson': 
         const lesson = selectedLessonId ? LESSONS.find(l => l.id === selectedLessonId) : null;
         return lesson ? <LessonScreen lesson={lesson} onBack={handleBack} onNextLesson={handleNextLesson} /> : null;
-      case 'quiz': return <QuizScreen />;
+      case 'quiz':
+        return <QuizScreen canAccessQuiz={isAuthenticated} onRequireAccount={() => setShowCourseAccessModal(true)} />;
       case 'detail': return selectedElement ? <ElementDetailScreen element={selectedElement} /> : null;
       case 'profile':
         return (
@@ -2008,6 +2025,8 @@ function AppContent() {
             onNavigateToLeaderboard={() => navigate({ screen: 'leaderboard' })}
             onNavigateToPrivacyPolicy={() => navigate({ screen: 'privacy-policy' })}
             onNavigateToAbout={() => navigate({ screen: 'about' })}
+            onNavigateToLogin={() => openAuthScreen('login')}
+            onNavigateToSignup={() => openAuthScreen('signup')}
           />
         );
       case 'leaderboard': return <LeaderboardScreen onBack={handleBack} />;
@@ -2054,6 +2073,49 @@ function AppContent() {
           setScreen={(next) => navigate({ screen: next, selectedElementNumber: null, selectedCourseId: null, selectedLessonId: null })}
         />
       )}
+
+      <AnimatePresence>
+        {showCourseAccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+            onClick={() => setShowCourseAccessModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md glass-card rounded-2xl border border-white/10 p-6 space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-2">
+                <h3 className="font-headline text-2xl text-white">{t.accountRequired}</h3>
+                <p className="text-white/70 text-sm leading-relaxed">{t.accountRequiredMessage}</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCourseAccessModal(false)}
+                  className="flex-1 py-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors font-medium"
+                >
+                  {t.close}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCourseAccessModal(false);
+                    openAuthScreen('signup');
+                  }}
+                  className="flex-1 py-3 rounded-full bg-primary-container text-on-primary-container font-bold hover:opacity-90 transition-opacity"
+                >
+                  {t.signup}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
