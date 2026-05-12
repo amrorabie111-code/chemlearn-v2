@@ -1885,6 +1885,7 @@ function AppContent() {
   const [screen, setScreen] = useState<Screen>('welcome');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [showCourseAccessModal, setShowCourseAccessModal] = useState(false);
+  const [showLogoutSuccessModal, setShowLogoutSuccessModal] = useState(false);
   const [selectedElement, setSelectedElement] = useState<ChemicalElement | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
@@ -1985,6 +1986,11 @@ function AppContent() {
     window.history.back();
   };
 
+  const handleLogout = async () => {
+    await logout();
+    setShowLogoutSuccessModal(true);
+  };
+
   const handleSelectLesson = (lessonId: string) => {
     if (!isAuthenticated) {
       setShowCourseAccessModal(true);
@@ -2027,6 +2033,7 @@ function AppContent() {
             onNavigateToAbout={() => navigate({ screen: 'about' })}
             onNavigateToLogin={() => openAuthScreen('login')}
             onNavigateToSignup={() => openAuthScreen('signup')}
+            onLogout={handleLogout}
           />
         );
       case 'leaderboard': return <LeaderboardScreen onBack={handleBack} />;
@@ -2112,6 +2119,40 @@ function AppContent() {
                   {t.signup}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showLogoutSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+            onClick={() => setShowLogoutSuccessModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md glass-card rounded-2xl border border-white/10 p-6 space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-2">
+                <h3 className="font-headline text-2xl text-white">{t.loggedOutSuccess}</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowLogoutSuccessModal(false);
+                  navigate({ screen: 'welcome', selectedElementNumber: null, selectedCourseId: null, selectedLessonId: null }, { replace: true });
+                }}
+                className="w-full py-3 rounded-full bg-primary-container text-on-primary-container font-bold hover:opacity-90 transition-opacity"
+              >
+                {t.ok}
+              </button>
             </motion.div>
           </motion.div>
         )}

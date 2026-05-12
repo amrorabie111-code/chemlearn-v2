@@ -16,6 +16,7 @@ interface ProfileScreenProps {
   onNavigateToAbout: () => void;
   onNavigateToLogin: () => void;
   onNavigateToSignup: () => void;
+  onLogout: () => Promise<void>;
 }
 
 // Generate avatar paths - assuming avatars are named avatar1.png through avatar30.png
@@ -26,9 +27,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onNavigateToPrivacyPolicy,
   onNavigateToAbout,
   onNavigateToLogin,
-  onNavigateToSignup
+  onNavigateToSignup,
+  onLogout
 }) => {
-  const { user, logout, uploadAvatar, updateUserData } = useAuth();
+  const { user, uploadAvatar, updateUserData } = useAuth();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
   const t = translations[language];
@@ -344,7 +346,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </button>
 
         <button
-          onClick={logout}
+          onClick={onLogout}
           className="w-full glass-card rounded-2xl p-4 flex items-center justify-between hover:bg-red-500/10 transition-colors group"
         >
           <div className="flex items-center gap-3">

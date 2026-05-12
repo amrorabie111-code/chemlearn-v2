@@ -195,6 +195,8 @@ export const translations = {
     accountRequired: "Account Required",
     accountRequiredMessage: "To access courses and quizzes you need a free account",
     close: "Close",
+    ok: "OK",
+    loggedOutSuccess: "You are logged out successfully",
     signInToTrackProgress: "Sign in to track your progress",
     signIn: "Sign In",
 
@@ -373,6 +375,8 @@ export const translations = {
     accountRequired: "يجب إنشاء حساب",
     accountRequiredMessage: "للوصول إلى الدروس والاختبارات يجب إنشاء حساب مجاني",
     close: "إغلاق",
+    ok: "حسناً",
+    loggedOutSuccess: "تم تسجيل الخروج بنجاح",
     signInToTrackProgress: "سجّل دخولك لتتبع تقدمك",
     signIn: "تسجيل الدخول",
 
