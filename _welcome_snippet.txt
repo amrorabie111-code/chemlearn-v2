@@ -1,14 +1,11 @@
 ﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ROUTES } from './routes/paths';
-import AppRoutes, { registerRouteComponents } from './routes/AppRoutes';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutGrid, Search, BookOpen, GraduationCap, ChevronRight, Share2, 
   ArrowLeft, Lightbulb, Zap, Lock, Play, CheckCircle, User
 } from 'lucide-react';
 import { ALL_ELEMENTS, COURSES, LESSONS, COURSE_QUIZZES, getLocalizedCourse, getLocalizedLesson, getLocalizedQuiz } from './data/elements';
-import { ChemicalElement, Course, ElementCategory, Lesson, QuizQuestion } from './types';
+import { ChemicalElement, Course, Screen, ElementCategory, Lesson, QuizQuestion } from './types';
 import { AtomModel } from './components/AtomModel';
 import ChaosButton from './components/ChaosButton';
 import { ParticleCanvas } from './components/ParticleCanvas';
@@ -29,7 +26,7 @@ const AppWithAuth: React.FC = () => {
     <LanguageProvider>
       <ThemeProvider>
         <AuthProvider>
-          <AppRoutes />
+          <AppContent />
         </AuthProvider>
       </ThemeProvider>
     </LanguageProvider>
@@ -37,28 +34,23 @@ const AppWithAuth: React.FC = () => {
 };
 
 // --- Auth Screen Wrapper ---
-const AuthScreen: React.FC<{ initialMode: 'login' | 'signup' }> = ({ initialMode }) => {
-  const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
+const AuthScreen: React.FC<{ initialMode?: 'login' | 'signup' }> = ({ initialMode = 'login' }) => {
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      navigate(ROUTES.elements, { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  return initialMode === 'login' ? (
-    <LoginScreen onSwitchToSignup={() => navigate(ROUTES.signup)} />
+    setIsLogin(initialMode === 'login');
+  }, [initialMode]);
+  
+  return isLogin ? (
+    <LoginScreen onSwitchToSignup={() => setIsLogin(false)} />
   ) : (
-    <SignupScreen onSwitchToLogin={() => navigate(ROUTES.login)} />
+    <SignupScreen onSwitchToLogin={() => setIsLogin(true)} />
   );
 };
 
 // --- Welcome Screen ---
 
-const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
-  const navigate = useNavigate();
-  const handleStart = onStart ?? (() => navigate(ROUTES.elements));
+const WelcomeScreen = ({ onStart }: { onStart: () => void }) => {
   const { language } = useLanguage();
   const t = translations[language];
 
@@ -91,7 +83,7 @@ const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
         <header className="mt-2 text-center md:mt-8">
           <div className="welcome-card overflow-hidden bg-white/5 backdrop-blur-sm px-4 py-3 md:p-8 rounded-[1.5rem] md:rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
             <h1 className="font-arabic text-[2.1rem] leading-none sm:text-5xl md:text-7xl font-bold tracking-tighter text-blue-400 drop-shadow-[0_0_20px_rgba(117,159,240,0.3)] select-none transition-colors">
-              منارة الكيمياء
+              ┘à┘å╪º╪▒╪⌐ ╪º┘ä┘â┘è┘à┘è╪º╪í
             </h1>
             <div className="mt-3 h-1 w-0 bg-blue-400 group-hover:w-full transition-all duration-500 mx-auto rounded-full" />
           </div>
@@ -106,12 +98,12 @@ const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
           </div>
 
           <div className="flex flex-col items-center mt-4 md:mt-8 gap-6 relative">
-            <ChaosButton onClick={handleStart} label={t.start} />
+            <ChaosButton onClick={onStart} label={t.start} />
             
             {/* Arrow and phrase underneath the button */}
             <div className="flex items-center justify-center gap-4 opacity-70 pointer-events-none w-full">
               <span id="text-exclusion-zone" className="font-arabic whitespace-nowrap text-white/80 font-bold tracking-widest text-sm translate-y-2 px-2">
-                اضغط باستمرار للبريق
+                ╪º╪╢╪║╪╖ ╪¿╪º╪│╪¬┘à╪▒╪º╪▒ ┘ä┘ä╪¿╪▒┘è┘é
               </span>
               <svg viewBox="0 0 122 97" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-[50px] text-white/50 -rotate-[100deg] scale-y-[-1]">
                 <path fillRule="evenodd" clipRule="evenodd" d="M116.102 0.0996005C114.952 0.334095 112.7 1.53002 111.433 2.53834C110.869 2.98388 109.368 4.15635 108.077 5.11778C103.455 8.6352 102.61 9.40903 102.187 10.4877C101.39 12.5982 102.798 14.5914 105.097 14.5914C106.13 14.5914 108.241 13.7941 109.696 12.8561C110.424 12.3871 111.01 12.0823 111.01 12.1526C111.01 12.692 107.796 17.8274 106.2 19.8206C102.023 25.0733 95.6642 29.6928 86.2548 34.2889C81.0926 36.8214 77.4555 38.2753 73.9123 39.2367C71.7066 39.823 70.6507 39.9871 67.9053 40.0809C66.0516 40.1513 64.5499 40.1747 64.5499 40.1278C64.5499 40.0809 64.808 38.9788 65.1365 37.6891C65.465 36.3993 65.8404 34.1716 66.0047 32.7647C66.4505 28.3796 65.4884 24.2994 63.4704 22.2359C62.1564 20.8758 60.9363 20.3599 59.0121 20.3599C57.6043 20.3599 57.1115 20.4537 55.7975 21.1103C52.8878 22.5407 50.5648 25.9878 49.5089 30.4197C48.453 34.922 49.2742 38.0877 52.3481 41.1127C53.4744 42.2148 54.46 42.9183 55.9852 43.6921C57.1584 44.2549 58.1439 44.7473 58.1909 44.7708C58.5898 45.0053 54.5304 53.4705 52.0666 57.6211C47.4674 65.3125 39.3486 74.575 30.5728 82.0789C22.2427 89.2309 16.7285 92.4435 9.87677 94.1553C8.28116 94.554 7.13138 94.6478 4.2452 94.6478C1.17131 94.6712 0.608154 94.7181 0.608154 95.023C0.608154 95.234 1.19478 95.5857 2.13337 95.9609C3.54126 96.4768 3.96363 96.5472 7.41296 96.5237C10.5572 96.5237 11.4724 96.4299 13.1149 96.0078C21.7265 93.6863 31.1594 87.1908 42.6102 75.7006C49.2977 69.0175 52.5828 64.9373 56.1494 58.9343C58.0501 55.7217 60.6312 50.6801 61.7575 47.9365L62.5553 45.9902L64.0806 46.1543C71.3547 46.9047 77.7136 45.3101 88.3667 40.034C96.2274 36.1414 101.976 32.3426 106.505 28.0748C108.617 26.0816 111.855 22.2828 112.794 20.7117C113.028 20.313 113.286 19.9847 113.357 19.9847C113.427 19.9847 113.662 20.782 113.873 21.72C114.084 22.6814 114.647 24.276 115.093 25.2609C115.82 26.8085 116.008 27.043 116.454 26.9727C116.876 26.9258 117.228 26.4333 117.956 24.9795C119.317 22.2828 119.833 20.2661 120.772 13.8879C121.757 7.25168 121.781 4.4143 120.889 2.56179C119.95 0.615488 118.12 -0.322489 116.102 0.0996005ZM60.7016 25.7767C61.4525 26.9023 61.8279 29.2942 61.6637 31.9205C61.4759 34.7813 60.5139 38.9788 60.0681 38.9788C59.5284 38.9788 57.1584 37.6422 56.2198 36.8214C54.8354 35.6021 54.3426 34.2889 54.5538 32.2957C54.8589 29.2473 56.1964 26.2223 57.5808 25.3547C58.7306 24.6512 60.0681 24.8388 60.7016 25.7767Z" fill="currentColor"/>
@@ -121,14 +113,14 @@ const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
         </div>
 
         <footer className="mt-auto pt-4 text-white/40 text-xs md:text-sm font-medium tracking-widest opacity-40 select-none">
-          CHEMISTRY LIGHTHOUSE © 2024
+          CHEMISTRY LIGHTHOUSE ┬⌐ 2024
         </footer>
       </div>
 
       {/* Interactive Hint for Mobile */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-20 pointer-events-none">
         <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-arabic animate-pulse">
-          المس الشاشة للتفاعل
+          ╪º┘ä┘à╪│ ╪º┘ä╪┤╪º╪┤╪⌐ ┘ä┘ä╪¬┘ü╪º╪╣┘ä
         </p>
       </div>
     </main>
@@ -137,39 +129,31 @@ const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
 
 // --- Shared Components ---
 
-const BottomNav = () => {
+const BottomNav = ({ current, setScreen }: { current: Screen, setScreen: (s: Screen) => void }) => {
   const { user } = useAuth();
   const { language } = useLanguage();
-  const location = useLocation();
   const t = translations[language];
-  const tabs: { path: string; matchPrefix?: boolean; icon: any; label: string; isProfile?: boolean }[] = [
-    { path: ROUTES.elements, matchPrefix: true, icon: LayoutGrid, label: t.elements },
-    { path: ROUTES.search, icon: Search, label: t.search },
-    { path: ROUTES.courses, matchPrefix: true, icon: BookOpen, label: t.coursesTab },
-    { path: ROUTES.quizHome, matchPrefix: true, icon: GraduationCap, label: t.quiz },
-    { path: ROUTES.profile, isProfile: true, icon: user?.avatar ? undefined : User, label: t.profile },
+  const tabs: { id: Screen, icon: any, label: string }[] = [
+    { id: 'elements', icon: LayoutGrid, label: t.elements },
+    { id: 'search', icon: Search, label: t.search },
+    { id: 'courses', icon: BookOpen, label: t.coursesTab },
+    { id: 'quiz', icon: GraduationCap, label: t.quiz },
+    { id: 'profile', icon: user?.avatar ? undefined : User, label: t.profile },
   ];
-
-  const isTabActive = (tab: (typeof tabs)[number]) => {
-    if (tab.matchPrefix) {
-      return location.pathname === tab.path || location.pathname.startsWith(`${tab.path}/`);
-    }
-    return location.pathname === tab.path;
-  };
 
   return (
     <nav className="fixed bottom-0 left-0 w-full bg-neutral-950/60 backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/10 flex justify-around items-center px-4 pt-3 pb-8 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
       {tabs.map((tab) => {
-        const isActive = isTabActive(tab);
+        const isActive = current === tab.id;
         return (
-          <Link
-            key={tab.path}
-            to={tab.path}
+          <button
+            key={tab.id}
+            onClick={() => setScreen(tab.id)}
             className={`bottom-nav-button flex flex-col items-center justify-center transition-all duration-300 relative ${
               isActive ? 'text-primary-container' : 'text-white/40 hover:text-white/80'
             }`}
           >
-            {tab.isProfile && user?.avatar ? (
+            {tab.id === 'profile' && user?.avatar ? (
               <img 
                 src={user.avatar} 
                 alt="Profile" 
@@ -187,28 +171,27 @@ const BottomNav = () => {
                 className="absolute -bottom-2 w-1 h-1 bg-primary-container rounded-full shadow-[0_0_8px_#22c55e]"
               />
             )}
-          </Link>
+          </button>
         );
       })}
     </nav>
   );
 };
 
-const Header = ({ showBack }: { showBack?: boolean }) => {
-  const navigate = useNavigate();
+const Header = ({ onBack, onLogoClick }: { onBack?: () => void, onLogoClick?: () => void }) => {
   const { language } = useLanguage();
   const t = translations[language];
 
   return (
     <header className="bg-neutral-950/40 backdrop-blur-2xl fixed top-0 w-full z-50 border-b border-white/10 flex justify-between items-center px-6 py-4 flex-nowrap">
       <div className="flex items-center gap-3 flex-nowrap shrink-0">
-        {showBack && (
-          <button onClick={() => navigate(-1)} className="p-1 -ml-2 text-white/60 hover:text-primary-container transition-all shrink-0">
+        {onBack && (
+          <button onClick={onBack} className="p-1 -ml-2 text-white/60 hover:text-primary-container transition-all shrink-0">
             <ArrowLeft className="w-6 h-6" />
           </button>
         )}
         <button 
-          onClick={() => navigate(ROUTES.elements)}
+          onClick={onLogoClick}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
         >
           <img src="/flask.png" alt="Chemistry Beacon" className="w-7 h-7 object-contain shrink-0" />
@@ -506,7 +489,7 @@ const ElementDetailScreen = ({ element }: { element: ChemicalElement }) => {
             <div>
               <h2 className="font-headline text-4xl text-white">{getElementName(element.symbol, element.name, t)}</h2>
               <span className="font-label text-xs text-primary-container tracking-[0.2em] uppercase font-bold">
-                {getCategoryLabel(element.category, t)} â€¢ {t.atomicNo} {numberFormatter.format(element.number)}
+                {getCategoryLabel(element.category, t)} ΓÇó {t.atomicNo} {numberFormatter.format(element.number)}
               </span>
             </div>
           </div>
@@ -545,7 +528,7 @@ const ElementDetailScreen = ({ element }: { element: ChemicalElement }) => {
           <h3 className="font-headline text-2xl text-white mb-2">{t.didYouKnow}</h3>
           <p className="font-body text-lg text-on-surface-variant italic leading-relaxed">
             {language === 'ar'
-              ? `"${t.didYouKnowFacts?.[element.symbol] || `${getElementName(element.symbol, element.name, t)} Ù‡Ùˆ Ø¹Ù†ØµØ± ÙƒÙŠÙ…ÙŠØ§Ø¦ÙŠ Ø±Ù…Ø²Ù‡ ${element.symbol} ÙˆØ¹Ø¯Ø¯Ù‡ Ø§Ù„Ø°Ø±ÙŠ ${numberFormatter.format(element.number)}.`}"`
+              ? `"${t.didYouKnowFacts?.[element.symbol] || `${getElementName(element.symbol, element.name, t)} ┘ç┘ê ╪╣┘å╪╡╪▒ ┘â┘è┘à┘è╪º╪ª┘è ╪▒┘à╪▓┘ç ${element.symbol} ┘ê╪╣╪»╪»┘ç ╪º┘ä╪░╪▒┘è ${numberFormatter.format(element.number)}.`}"`
               : `"${element.summary.split('.')[0]}."`}
           </p>
         </div>
@@ -562,10 +545,10 @@ const ElementDetailScreen = ({ element }: { element: ChemicalElement }) => {
         {[
           { label: t.atomicMass, value: formatNumericText(element.atomicMass), primary: true },
           { label: t.state, value: getStateLabel(element.state, t) },
-          { label: t.density, value: element.density ? `${formatNumericText(element.density)} g/cmÂ³` : t.na },
+          { label: t.density, value: element.density ? `${formatNumericText(element.density)} g/cm┬│` : t.na },
           { label: t.discoveredBy, value: element.discoveredBy },
-          { label: t.meltingPoint, value: element.meltingPoint ? `${formatNumericText(element.meltingPoint)}Â°C` : t.na },
-          { label: t.boilingPoint, value: element.boilingPoint ? `${formatNumericText(element.boilingPoint)}Â°C` : t.na },
+          { label: t.meltingPoint, value: element.meltingPoint ? `${formatNumericText(element.meltingPoint)}┬░C` : t.na },
+          { label: t.boilingPoint, value: element.boilingPoint ? `${formatNumericText(element.boilingPoint)}┬░C` : t.na },
           { label: t.config, value: element.electronConfiguration },
           { label: t.shells, value: language === 'ar' ? element.shells.map(n => numberFormatter.format(n)).join(', ') : element.shells.join(', ') },
         ].map((prop, idx) => (
@@ -1070,44 +1053,22 @@ const QuizResultScreen = ({
 // Main Quiz Screen Component
 const QuizScreen = ({
   canAccessQuiz,
-  onRequireAccount,
-  initialCourseId,
-  onCourseSelect,
-  onQuizHome,
+  onRequireAccount
 }: {
   canAccessQuiz: boolean;
   onRequireAccount: () => void;
-  initialCourseId?: string;
-  onCourseSelect?: (courseId: string) => void;
-  onQuizHome?: () => void;
 }) => {
-  const [quizState, setQuizState] = useState<'home' | 'intro' | 'play' | 'result'>(
-    initialCourseId ? 'intro' : 'home'
-  );
-  const [selectedCourseId, setSelectedCourseId] = useState<string>(initialCourseId ?? '');
+  const [quizState, setQuizState] = useState<'home' | 'intro' | 'play' | 'result'>('home');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [result, setResult] = useState({ score: 0, total: 0 });
-
-  useEffect(() => {
-    if (initialCourseId) {
-      setSelectedCourseId(initialCourseId);
-      setQuizState('intro');
-    } else {
-      setSelectedCourseId('');
-      setQuizState('home');
-    }
-  }, [initialCourseId]);
 
   const handleSelectCourse = (courseId: string) => {
     if (!canAccessQuiz) {
       onRequireAccount();
       return;
     }
-    if (onCourseSelect) {
-      onCourseSelect(courseId);
-    } else {
-      setSelectedCourseId(courseId);
-      setQuizState('intro');
-    }
+    setSelectedCourseId(courseId);
+    setQuizState('intro');
   };
 
   const handleStart = () => {
@@ -1124,12 +1085,8 @@ const QuizScreen = ({
   };
 
   const handleBackToHome = () => {
-    if (onQuizHome) {
-      onQuizHome();
-    } else {
-      setQuizState('home');
-      setSelectedCourseId('');
-    }
+    setQuizState('home');
+    setSelectedCourseId('');
   };
 
   const handleBackToIntro = () => {
@@ -1390,7 +1347,7 @@ const LessonScreen = ({ lesson, onBack, onNextLesson }: { lesson: Lesson, onBack
               const isAd =
                 section.id.toLowerCase().includes('ad') ||
                 section.content?.includes('Advertisement') ||
-                section.content?.includes('Ø¥Ø¹Ù„Ø§Ù†ÙŠØ©');
+                section.content?.includes('╪Ñ╪╣┘ä╪º┘å┘è╪⌐');
               return (
                 <div key={section.id} className={`rounded-2xl p-5 border-2 ${
                   isAd ? 'h-48 flex items-center justify-center' : ''
@@ -1920,22 +1877,288 @@ const CourseDetailScreen = ({ courseId, onBack, onSelectLesson }: { courseId: st
   );
 };
 
-registerRouteComponents({
-  WelcomeScreen,
-  AuthScreen,
-  Header,
-  BottomNav,
-  ElementsScreen,
-  ElementDetailScreen,
-  SearchScreen,
-  CoursesScreen,
-  CourseDetailScreen,
-  LessonScreen,
-  QuizScreen,
-  ProfileScreen,
-  LeaderboardScreen,
-  PrivacyPolicyScreen,
-  AboutScreen,
-});
+function AppContent() {
+  const { isAuthenticated, isLoading, logout, user, completeLesson, isLessonCompleted } = useAuth();
+  const { theme } = useTheme();
+  const { language } = useLanguage();
+  const t = translations[language];
+  const [screen, setScreen] = useState<Screen>('welcome');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [showCourseAccessModal, setShowCourseAccessModal] = useState(false);
+  const [showLogoutSuccessModal, setShowLogoutSuccessModal] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<ChemicalElement | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+
+  type NavState = {
+    screen: Screen;
+    selectedElementNumber?: number | null;
+    selectedCourseId?: string | null;
+    selectedLessonId?: string | null;
+  };
+
+  const isHandlingPopState = useRef(false);
+
+  const MAIN_TABS: Screen[] = ['elements', 'search', 'courses', 'quiz', 'profile'];
+  const isMainTab = (s: Screen) => MAIN_TABS.includes(s);
+
+  const applyNavState = (state: NavState) => {
+    setScreen(state.screen);
+    setSelectedCourseId(state.selectedCourseId ?? null);
+    setSelectedLessonId(state.selectedLessonId ?? null);
+
+    if (state.selectedElementNumber != null) {
+      const el = ALL_ELEMENTS.find(e => e.number === state.selectedElementNumber) as unknown as ChemicalElement | undefined;
+      setSelectedElement(el ?? null);
+    } else {
+      setSelectedElement(null);
+    }
+  };
+
+  const replaceHistoryState = (state: NavState) => {
+    window.history.replaceState(state, document.title);
+  };
+
+  const pushHistoryState = (state: NavState) => {
+    window.history.pushState(state, document.title);
+  };
+
+  const navigate = (next: NavState, opts?: { replace?: boolean }) => {
+    // If the target is a main tab, keep history shallow so browser back returns to Welcome.
+    const shouldReplace =
+      opts?.replace ??
+      (isMainTab(next.screen) && screen !== 'welcome' && screen !== 'auth');
+
+    if (shouldReplace) {
+      replaceHistoryState(next);
+    } else {
+      pushHistoryState(next);
+    }
+
+    applyNavState(next);
+  };
+
+  // Browser / mobile back button (popstate)
+  useEffect(() => {
+    // Ensure there is always a baseline app state.
+    replaceHistoryState({ screen: 'welcome' });
+
+    const onPopState = (e: PopStateEvent) => {
+      const state = (e.state as NavState | null) || { screen: 'welcome' };
+      isHandlingPopState.current = true;
+      applyNavState(state);
+      isHandlingPopState.current = false;
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Redirect from auth to main app when authenticated
+  useEffect(() => {
+    console.log('Main redirect check:', { isLoading, isAuthenticated, screen });
+    if (!isLoading && isAuthenticated && screen === 'auth') {
+      console.log('Redirecting to elements');
+      // Replace auth in history so browser back stays in app flow.
+      navigate({ screen: 'elements' }, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, screen]);
+
+  const openAuthScreen = (mode: 'login' | 'signup') => {
+    setAuthMode(mode);
+    navigate({ screen: 'auth' as Screen });
+  };
+
+  const handleSelectElement = (el: ChemicalElement) => {
+    navigate({ screen: 'detail', selectedElementNumber: el.number });
+  };
+
+  const handleSelectCourse = (courseId: string) => {
+    if (!isAuthenticated) {
+      setShowCourseAccessModal(true);
+      return;
+    }
+    navigate({ screen: 'course-detail', selectedCourseId: courseId });
+  };
+
+  const handleBack = () => {
+    window.history.back();
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setShowLogoutSuccessModal(true);
+  };
+
+  const handleSelectLesson = (lessonId: string) => {
+    if (!isAuthenticated) {
+      setShowCourseAccessModal(true);
+      return;
+    }
+    navigate({ screen: 'lesson', selectedCourseId, selectedLessonId: lessonId });
+  };
+
+  const handleNextLesson = (lessonId: string) => {
+    // Keep user on the same "lesson" history entry when moving to next lesson.
+    setSelectedLessonId(lessonId);
+    if (!isHandlingPopState.current) {
+      replaceHistoryState({ screen: 'lesson', selectedCourseId, selectedLessonId: lessonId });
+    }
+  };
+
+  const handleStart = () => {
+    navigate({ screen: 'elements' });
+  };
+
+  const currentScreen = useMemo(() => {
+    switch (screen) {
+      case 'welcome': return <WelcomeScreen onStart={handleStart} />;
+      case 'auth': return <AuthScreen initialMode={authMode} />;
+      case 'elements': return <ElementsScreen onSelectElement={handleSelectElement} />;
+      case 'search': return <SearchScreen onSelectElement={handleSelectElement} />;
+        case 'courses': return <CoursesScreen onSelectCourse={handleSelectCourse} />;
+      case 'course-detail': return selectedCourseId ? <CourseDetailScreen courseId={selectedCourseId} onBack={handleBack} onSelectLesson={handleSelectLesson} /> : null;
+      case 'lesson': 
+        const lesson = selectedLessonId ? LESSONS.find(l => l.id === selectedLessonId) : null;
+        return lesson ? <LessonScreen lesson={lesson} onBack={handleBack} onNextLesson={handleNextLesson} /> : null;
+      case 'quiz':
+        return <QuizScreen canAccessQuiz={isAuthenticated} onRequireAccount={() => setShowCourseAccessModal(true)} />;
+      case 'detail': return selectedElement ? <ElementDetailScreen element={selectedElement} /> : null;
+      case 'profile':
+        return (
+          <ProfileScreen
+            onNavigateToLeaderboard={() => navigate({ screen: 'leaderboard' })}
+            onNavigateToPrivacyPolicy={() => navigate({ screen: 'privacy-policy' })}
+            onNavigateToAbout={() => navigate({ screen: 'about' })}
+            onNavigateToLogin={() => openAuthScreen('login')}
+            onNavigateToSignup={() => openAuthScreen('signup')}
+            onLogout={handleLogout}
+          />
+        );
+      case 'leaderboard': return <LeaderboardScreen onBack={handleBack} />;
+      case 'privacy-policy': return <PrivacyPolicyScreen onBack={handleBack} />;
+      case 'about': return <AboutScreen onBack={handleBack} />;
+      default: return null;
+    }
+  }, [screen, selectedElement, selectedCourseId, selectedLessonId]);
+
+  const isWelcome = screen === 'welcome' || screen === 'auth';
+  const isDetail =
+    screen === 'detail' ||
+    screen === 'course-detail' ||
+    screen === 'lesson' ||
+    screen === 'leaderboard' ||
+    screen === 'privacy-policy' ||
+    screen === 'about';
+
+  const handleLogoClick = () => {
+    navigate({ screen: 'elements', selectedElementNumber: null, selectedCourseId: null, selectedLessonId: null });
+  };
+
+  return (
+    <div className={`min-h-screen selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden ${theme === 'dark' ? 'bg-surface' : 'bg-white'}`}>
+      {!isWelcome && <Header onBack={isDetail ? handleBack : undefined} onLogoClick={handleLogoClick} />}
+      
+      <main>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screen + (selectedElement?.number || '')}
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.02, y: -10 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {currentScreen}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {!isWelcome && (
+        <BottomNav
+          current={screen === 'detail' ? 'elements' : screen}
+          setScreen={(next) => navigate({ screen: next, selectedElementNumber: null, selectedCourseId: null, selectedLessonId: null })}
+        />
+      )}
+
+      <AnimatePresence>
+        {showCourseAccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+            onClick={() => setShowCourseAccessModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md glass-card rounded-2xl border border-white/10 p-6 space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-2">
+                <h3 className="font-headline text-2xl text-white">{t.accountRequired}</h3>
+                <p className="text-white/70 text-sm leading-relaxed">{t.accountRequiredMessage}</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCourseAccessModal(false)}
+                  className="flex-1 py-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors font-medium"
+                >
+                  {t.close}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCourseAccessModal(false);
+                    openAuthScreen('signup');
+                  }}
+                  className="flex-1 py-3 rounded-full bg-primary-container text-on-primary-container font-bold hover:opacity-90 transition-opacity"
+                >
+                  {t.signup}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showLogoutSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+            onClick={() => setShowLogoutSuccessModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md glass-card rounded-2xl border border-white/10 p-6 space-y-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-2">
+                <h3 className="font-headline text-2xl text-white">{t.loggedOutSuccess}</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowLogoutSuccessModal(false);
+                  navigate({ screen: 'welcome', selectedElementNumber: null, selectedCourseId: null, selectedLessonId: null }, { replace: true });
+                }}
+                className="w-full py-3 rounded-full bg-primary-container text-on-primary-container font-bold hover:opacity-90 transition-opacity"
+              >
+                {t.ok}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default AppWithAuth;
