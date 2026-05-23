@@ -37,19 +37,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [showAvatarGrid, setShowAvatarGrid] = useState(false);
   const [selectError, setSelectError] = useState('');
 
-  // Sync theme from user data on mount
-  useEffect(() => {
-    if (user?.theme) {
-      setTheme(user.theme);
-    }
-  }, [user?.theme, setTheme]);
 
-  // Sync language from user data on mount
-  useEffect(() => {
-    if (user?.language) {
-      setLanguage(user.language);
-    }
-  }, [user?.language, setLanguage]);
+
 
   if (!user) {
     return (
