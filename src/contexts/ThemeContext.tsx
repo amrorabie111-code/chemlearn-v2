@@ -20,9 +20,11 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   });
 
   useEffect(() => {
-    // Apply theme to body
+    // Apply theme to body and html
     document.body.classList.remove('light-mode', 'dark-mode');
     document.body.classList.add(`${theme}-mode`);
+    document.documentElement.classList.remove('light-mode', 'dark-mode');
+    document.documentElement.classList.add(`${theme}-mode`);
     
     // Save to localStorage
     localStorage.setItem('theme', theme);
