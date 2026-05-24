@@ -1382,17 +1382,18 @@ const LessonScreen = ({ lesson, onBack, onNextLesson }: { lesson: Lesson, onBack
                 section.id.toLowerCase().includes('ad') ||
                 section.content?.includes('Advertisement') ||
                 section.content?.includes('Ø¥Ø¹Ù„Ø§Ù†ÙŠØ©');
+              if (isAd) {
+                return <div key={section.id} style={{ display: 'none' }} />;
+              }
               return (
                 <div key={section.id} className={`rounded-2xl p-5 border-2 ${
-                  isAd ? 'h-48 flex items-center justify-center' : ''
-                } ${
                   section.variant === 'yellow'
                     ? 'bg-green-500/10 border-green-500/30'
                     : section.variant === 'blue'
                     ? 'bg-blue-500/10 border-blue-500/30'
                     : 'bg-purple-500/10 border-purple-500/30'
                 }`}>
-                  <div className={`flex items-center gap-3 ${isAd ? 'flex-col justify-center' : 'items-start'}`}>
+                  <div className="flex items-start gap-3">
                     {section.icon && <span className="text-2xl">{section.icon}</span>}
                     <p className={`font-medium ${
                       section.variant === 'yellow'
