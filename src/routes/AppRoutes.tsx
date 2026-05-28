@@ -115,12 +115,10 @@ function SearchPage() {
 
 function CoursesPage() {
   const navigate = useNavigate();
-  const { requireAuth } = useMainLayoutContext();
   const { CoursesScreen } = useRegisteredComponents();
   return (
     <CoursesScreen
       onSelectCourse={(courseId) => {
-        if (requireAuth()) return;
         navigate(ROUTES.courseDetail(courseId));
       }}
     />

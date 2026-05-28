@@ -62,71 +62,167 @@ const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
   const { language } = useLanguage();
   const t = translations[language];
 
-  useEffect(() => {
-    document.body.style.overscrollBehavior = 'none';
-    document.documentElement.style.overscrollBehavior = 'none';
+  const featuredElements = [
+    { number: 1, symbol: 'H', name: language === 'ar' ? 'هيدروجين' : 'Hydrogen', category: 'nonmetal' },
+    { number: 6, symbol: 'C', name: language === 'ar' ? 'كربون' : 'Carbon', category: 'nonmetal' },
+    { number: 8, symbol: 'O', name: language === 'ar' ? 'أكسجين' : 'Oxygen', category: 'nonmetal' },
+    { number: 7, symbol: 'N', name: language === 'ar' ? 'نيتروجين' : 'Nitrogen', category: 'nonmetal' },
+    { number: 26, symbol: 'Fe', name: language === 'ar' ? 'حديد' : 'Iron', category: 'transition metal' },
+    { number: 79, symbol: 'Au', name: language === 'ar' ? 'ذهب' : 'Gold', category: 'transition metal' },
+  ];
 
-    return () => {
-      document.body.style.overscrollBehavior = '';
-      document.documentElement.style.overscrollBehavior = '';
-    };
-  }, []);
+  const features = [
+    { icon: '⚛️', title: language === 'ar' ? 'الجدول الدوري' : 'Periodic Table', desc: language === 'ar' ? 'استكشف 118 عنصراً كيميائياً مع معلومات تفصيلية عن كل عنصر' : 'Explore all 118 elements with detailed information about each one' },
+    { icon: '📚', title: language === 'ar' ? 'دورات تعليمية' : 'Courses', desc: language === 'ar' ? 'دروس تفاعلية في الكيمياء الأساسية، الأحماض، الكهروكيمياء، وغيرها' : 'Interactive lessons in basic chemistry, acids, electrochemistry, and more' },
+    { icon: '✍️', title: language === 'ar' ? 'اختبارات تفاعلية' : 'Quizzes', desc: language === 'ar' ? 'اختبر معرفتك بأسئلة متعددة الخيارات وتابع تقدمك' : 'Test your knowledge with multiple-choice questions and track your progress' },
+    { icon: '🏆', title: language === 'ar' ? 'لوحة الصدارة' : 'Leaderboard', desc: language === 'ar' ? 'تنافس مع زملائك واربح النقاط لتصبح الأول' : 'Compete with peers, earn XP points, and climb to the top' },
+  ];
 
   return (
-    <main className="welcome-screen fixed inset-0 z-[100] h-[100dvh] max-h-[100dvh] w-full bg-[#16181D] flex flex-col items-center justify-between overflow-hidden overscroll-none touch-none px-5 pt-5 pb-4 md:p-8">
-      {/* Background Particles */}
+    <div className="welcome-screen relative min-h-screen bg-[#16181D] overflow-x-hidden">
+      {/* Fixed background particles */}
       <ParticleCanvas />
 
-      {/* Hero Content */}
-      <div className="relative z-10 flex h-full w-full max-w-5xl flex-col items-center py-4 md:py-12">
-        <header className="mt-2 text-center md:mt-8">
-          <div className="welcome-card overflow-hidden bg-white/5 backdrop-blur-sm px-4 py-3 md:p-8 rounded-[1.5rem] md:rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
-            <h1 className="font-arabic text-[2.1rem] leading-none sm:text-5xl md:text-7xl font-bold tracking-tighter text-blue-400 drop-shadow-[0_0_20px_rgba(117,159,240,0.3)] select-none transition-colors">
-              منارة الكيمياء
-            </h1>
-            <div className="mt-3 h-1 w-0 bg-blue-400 group-hover:w-full transition-all duration-500 mx-auto rounded-full" />
-          </div>
-        </header>
+      {/* Scrollable content */}
+      <div className="relative z-10">
+        {/* Hero Section */}
+        <section className="min-h-screen flex flex-col items-center justify-center px-5 pt-5 pb-4 md:p-8">
+          <div className="w-full max-w-5xl flex flex-col items-center py-4 md:py-12">
+            <header className="mt-2 text-center md:mt-8">
+              <div className="welcome-card overflow-hidden bg-white/5 backdrop-blur-sm px-4 py-3 md:p-8 rounded-[1.5rem] md:rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
+                <h1 className="font-arabic text-[2.1rem] leading-none sm:text-5xl md:text-7xl font-bold tracking-tighter text-blue-400 drop-shadow-[0_0_20px_rgba(117,159,240,0.3)] select-none transition-colors">
+                  منارة الكيمياء
+                </h1>
+                <div className="mt-3 h-1 w-0 bg-blue-400 group-hover:w-full transition-all duration-500 mx-auto rounded-full" />
+              </div>
+            </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center w-full gap-6 md:gap-12">
-          <div className="welcome-card overflow-hidden bg-white/5 backdrop-blur-sm px-4 py-3 md:p-8 rounded-[1.25rem] md:rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
-            <h2 className="font-arabic text-[1.55rem] sm:text-3xl md:text-5xl font-light text-white/90 tracking-wide select-none group-hover:text-blue-400 transition-colors">
-              {t.welcome}
-            </h2>
-            <div className="mt-3 h-1 w-0 bg-blue-400 group-hover:w-full transition-all duration-500 mx-auto rounded-full" />
-          </div>
+            <div className="flex-1 flex flex-col items-center justify-center w-full gap-6 md:gap-12">
+              <div className="welcome-card overflow-hidden bg-white/5 backdrop-blur-sm px-4 py-3 md:p-8 rounded-[1.25rem] md:rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-blue-400/20 group">
+                <h2 className="font-arabic text-[1.55rem] sm:text-3xl md:text-5xl font-light text-white/90 tracking-wide select-none group-hover:text-blue-400 transition-colors">
+                  {t.welcome}
+                </h2>
+                <div className="mt-3 h-1 w-0 bg-blue-400 group-hover:w-full transition-all duration-500 mx-auto rounded-full" />
+              </div>
 
-          <div className="flex flex-col items-center mt-4 md:mt-8 gap-6 relative">
-            <ChaosButton onClick={handleStart} label={t.start} />
-            
-            {/* Arrow and phrase underneath the button */}
-            <div className="flex items-center justify-center gap-4 opacity-70 pointer-events-none w-full">
-              <span id="text-exclusion-zone" className="font-arabic whitespace-nowrap text-white/80 font-bold tracking-widest text-sm translate-y-2 px-2">
-                اضغط باستمرار للبريق
-              </span>
-              <svg viewBox="0 0 122 97" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-[50px] text-white/50 -rotate-[100deg] scale-y-[-1]">
-                <path fillRule="evenodd" clipRule="evenodd" d="M116.102 0.0996005C114.952 0.334095 112.7 1.53002 111.433 2.53834C110.869 2.98388 109.368 4.15635 108.077 5.11778C103.455 8.6352 102.61 9.40903 102.187 10.4877C101.39 12.5982 102.798 14.5914 105.097 14.5914C106.13 14.5914 108.241 13.7941 109.696 12.8561C110.424 12.3871 111.01 12.0823 111.01 12.1526C111.01 12.692 107.796 17.8274 106.2 19.8206C102.023 25.0733 95.6642 29.6928 86.2548 34.2889C81.0926 36.8214 77.4555 38.2753 73.9123 39.2367C71.7066 39.823 70.6507 39.9871 67.9053 40.0809C66.0516 40.1513 64.5499 40.1747 64.5499 40.1278C64.5499 40.0809 64.808 38.9788 65.1365 37.6891C65.465 36.3993 65.8404 34.1716 66.0047 32.7647C66.4505 28.3796 65.4884 24.2994 63.4704 22.2359C62.1564 20.8758 60.9363 20.3599 59.0121 20.3599C57.6043 20.3599 57.1115 20.4537 55.7975 21.1103C52.8878 22.5407 50.5648 25.9878 49.5089 30.4197C48.453 34.922 49.2742 38.0877 52.3481 41.1127C53.4744 42.2148 54.46 42.9183 55.9852 43.6921C57.1584 44.2549 58.1439 44.7473 58.1909 44.7708C58.5898 45.0053 54.5304 53.4705 52.0666 57.6211C47.4674 65.3125 39.3486 74.575 30.5728 82.0789C22.2427 89.2309 16.7285 92.4435 9.87677 94.1553C8.28116 94.554 7.13138 94.6478 4.2452 94.6478C1.17131 94.6712 0.608154 94.7181 0.608154 95.023C0.608154 95.234 1.19478 95.5857 2.13337 95.9609C3.54126 96.4768 3.96363 96.5472 7.41296 96.5237C10.5572 96.5237 11.4724 96.4299 13.1149 96.0078C21.7265 93.6863 31.1594 87.1908 42.6102 75.7006C49.2977 69.0175 52.5828 64.9373 56.1494 58.9343C58.0501 55.7217 60.6312 50.6801 61.7575 47.9365L62.5553 45.9902L64.0806 46.1543C71.3547 46.9047 77.7136 45.3101 88.3667 40.034C96.2274 36.1414 101.976 32.3426 106.505 28.0748C108.617 26.0816 111.855 22.2828 112.794 20.7117C113.028 20.313 113.286 19.9847 113.357 19.9847C113.427 19.9847 113.662 20.782 113.873 21.72C114.084 22.6814 114.647 24.276 115.093 25.2609C115.82 26.8085 116.008 27.043 116.454 26.9727C116.876 26.9258 117.228 26.4333 117.956 24.9795C119.317 22.2828 119.833 20.2661 120.772 13.8879C121.757 7.25168 121.781 4.4143 120.889 2.56179C119.95 0.615488 118.12 -0.322489 116.102 0.0996005ZM60.7016 25.7767C61.4525 26.9023 61.8279 29.2942 61.6637 31.9205C61.4759 34.7813 60.5139 38.9788 60.0681 38.9788C59.5284 38.9788 57.1584 37.6422 56.2198 36.8214C54.8354 35.6021 54.3426 34.2889 54.5538 32.2957C54.8589 29.2473 56.1964 26.2223 57.5808 25.3547C58.7306 24.6512 60.0681 24.8388 60.7016 25.7767Z" fill="currentColor"/>
-              </svg>
+              <p className="text-white/70 text-base md:text-lg max-w-xl text-center leading-relaxed px-4">
+                {language === 'ar'
+                  ? 'منصة تعليمية تفاعلية لتعلم الكيمياء لطلاب المرحلة الثانوية في السودان. استكشف العناصر، وتعلم الدروس، واختبر معرفتك.'
+                  : 'An interactive chemistry learning platform for Sudanese secondary school students. Explore elements, take courses, and test your knowledge.'}
+              </p>
+
+              <div className="flex flex-col items-center mt-4 md:mt-8 gap-6 relative">
+                <ChaosButton onClick={handleStart} label={t.start} />
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <footer className="mt-auto pt-4 text-white/40 text-xs md:text-sm font-medium tracking-widest opacity-40 select-none">
-          CHEMISTRY LIGHTHOUSE © 2024
+        {/* Features Section */}
+        <section className="px-6 py-16 md:py-24 max-w-5xl mx-auto">
+          <h3 className="text-center font-arabic text-2xl md:text-4xl font-bold text-white mb-4">
+            {language === 'ar' ? 'ماذا نقدم؟' : 'What We Offer'}
+          </h3>
+          <div className="w-16 h-1 bg-blue-400 mx-auto rounded-full mb-12" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {features.map((f, i) => (
+              <div key={i} className="glass-card rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+                <span className="text-3xl mb-3 block">{f.icon}</span>
+                <h4 className="font-arabic text-lg md:text-xl font-bold text-white mb-2">{f.title}</h4>
+                <p className="text-white/60 text-sm md:text-base leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Element Preview Section */}
+        <section className="px-6 py-16 md:py-24 max-w-5xl mx-auto">
+          <h3 className="text-center font-arabic text-2xl md:text-4xl font-bold text-white mb-4">
+            {language === 'ar' ? 'العناصر الأساسية' : 'Key Elements'}
+          </h3>
+          <div className="w-16 h-1 bg-blue-400 mx-auto rounded-full mb-4" />
+          <p className="text-white/50 text-center text-sm md:text-base mb-12 max-w-lg mx-auto">
+            {language === 'ar'
+              ? 'نظرة سريعة على بعض العناصر المهمة في الجدول الدوري'
+              : 'A quick look at some important elements in the periodic table'}
+          </p>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+            {featuredElements.map((el) => (
+              <div key={el.symbol}
+                className="glass-card rounded-xl p-4 text-center hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                onClick={() => navigate(ROUTES.elementDetail(el.symbol))}
+              >
+                <div className={`text-2xl md:text-3xl font-bold mb-1 ${
+                  el.category === 'nonmetal' ? 'text-blue-400' : 'text-yellow-400'
+                }`}>
+                  {el.symbol}
+                </div>
+                <div className="text-white/40 text-xs">{el.number}</div>
+                <div className="text-white/70 text-xs mt-1 font-medium truncate">{el.name}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Courses Preview Section */}
+        <section className="px-6 py-16 md:py-24 max-w-5xl mx-auto">
+          <h3 className="text-center font-arabic text-2xl md:text-4xl font-bold text-white mb-4">
+            {language === 'ar' ? 'دوراتنا' : 'Our Courses'}
+          </h3>
+          <div className="w-16 h-1 bg-blue-400 mx-auto rounded-full mb-12" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {COURSES.slice(0, 4).map((course) => (
+              <div key={course.id}
+                className="glass-card rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                onClick={() => navigate(ROUTES.courses)}
+              >
+                <div className="h-32 bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+                  <span className="text-4xl opacity-50">
+                    {course.id === 'basic-chemistry' ? '🧪' :
+                     course.id === 'acids-bases' ? '🔬' :
+                     course.id === 'electrochemistry' ? '⚡' :
+                     course.id === 'thermochemistry' ? '🔥' : '📗'}
+                  </span>
+                </div>
+                <div className="p-4">
+                  <h4 className="font-arabic text-lg font-bold text-white mb-1">
+                    {language === 'ar'
+                      ? (course.id === 'basic-chemistry' ? 'الكيمياء الأساسية' :
+                         course.id === 'acids-bases' ? 'الأحماض والقواعد' :
+                         course.id === 'electrochemistry' ? 'الكهروكيمياء' :
+                         course.id === 'thermochemistry' ? 'الكيمياء الحرارية' : course.title)
+                      : course.title}
+                  </h4>
+                  <p className="text-white/50 text-sm">{course.lessons} {language === 'ar' ? 'دروس' : 'lessons'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="px-6 py-16 md:py-24 text-center">
+          <div className="max-w-lg mx-auto">
+            <h3 className="font-arabic text-2xl md:text-3xl font-bold text-white mb-4">
+              {language === 'ar' ? 'ابدأ رحلتك الآن' : 'Start Your Journey Now'}
+            </h3>
+            <p className="text-white/60 text-sm md:text-base mb-8 leading-relaxed">
+              {language === 'ar'
+                ? 'انطلق في رحلة شيقة لاستكشاف عالم الكيمياء. تعلم، اختبر، وتفوق!'
+                : 'Embark on an exciting journey to explore the world of chemistry. Learn, test, and excel!'}
+            </p>
+            <ChaosButton onClick={() => navigate(ROUTES.elements)} label={language === 'ar' ? 'ابدأ الاستكشاف' : 'Start Exploring'} />
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="px-6 py-8 text-center text-white/30 text-xs md:text-sm font-medium tracking-widest select-none border-t border-white/5">
+          CHEMISTRY LIGHTHOUSE &copy; 2024 &mdash; {language === 'ar' ? 'منارة الكيمياء' : 'Chemistry Beacon'}
         </footer>
       </div>
-
-      {/* Interactive Hint for Mobile */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:hidden z-20 pointer-events-none">
-        <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-arabic animate-pulse">
-          المس الشاشة للتفاعل
-        </p>
-      </div>
-    </main>
+    </div>
   );
 };
-
-// --- Shared Components ---
 
 const BottomNav = () => {
   const { user } = useAuth();
