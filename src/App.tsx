@@ -171,32 +171,24 @@ const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
           </h3>
           <div className="w-16 h-1 bg-blue-400 mx-auto rounded-full mb-12" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {COURSES.slice(0, 4).map((course) => (
-              <div key={course.id}
-                className="glass-card rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-300 cursor-pointer"
-                onClick={() => navigate(ROUTES.courses)}
-              >
-                <div className="h-32 bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                  <span className="text-4xl opacity-50">
-                    {course.id === 'basic-chemistry' ? '🧪' :
-                     course.id === 'acids-bases' ? '🔬' :
-                     course.id === 'electrochemistry' ? '⚡' :
-                     course.id === 'thermochemistry' ? '🔥' : '📗'}
-                  </span>
+            {COURSES.slice(0, 4).map((course) => {
+              const localizedCourse = getLocalizedCourse(course, language);
+              return (
+                <div key={course.id}
+                  className="glass-card rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                  onClick={() => navigate(ROUTES.courses)}
+                >
+                  <div className="h-32 overflow-hidden relative bg-black/40">
+                    <img src={course.image} alt={localizedCourse.title} className="w-full h-full object-cover opacity-60 hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-arabic text-lg font-bold text-white mb-1">{localizedCourse.title}</h4>
+                    <p className="text-white/50 text-sm">{course.lessons} {language === 'ar' ? 'دروس' : 'lessons'}</p>
+                  </div>
                 </div>
-                <div className="p-4">
-                  <h4 className="font-arabic text-lg font-bold text-white mb-1">
-                    {language === 'ar'
-                      ? (course.id === 'basic-chemistry' ? 'الكيمياء الأساسية' :
-                         course.id === 'acids-bases' ? 'الأحماض والقواعد' :
-                         course.id === 'electrochemistry' ? 'الكهروكيمياء' :
-                         course.id === 'thermochemistry' ? 'الكيمياء الحرارية' : course.title)
-                      : course.title}
-                  </h4>
-                  <p className="text-white/50 text-sm">{course.lessons} {language === 'ar' ? 'دروس' : 'lessons'}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

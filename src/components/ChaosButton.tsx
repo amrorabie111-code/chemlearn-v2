@@ -320,7 +320,7 @@ export default function ChaosButton({ onClick, label = 'ابدا' }: ChaosButton
         background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
         minWidth: '240px',
         minHeight: '60px',
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}
