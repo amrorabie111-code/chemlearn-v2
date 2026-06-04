@@ -638,13 +638,6 @@ const ElementDetailScreen = ({ element }: { element: ChemicalElement }) => {
         </div>
       </section>
 
-      {/* Ad Container */}
-      <section className="w-full">
-        <div className="glass-card rounded-3xl p-8 min-h-[120px] flex items-center justify-center border border-white/10 border-dashed">
-          <span className="font-label text-sm text-white/40 uppercase tracking-widest font-bold">Ads</span>
-        </div>
-      </section>
-
       <div className="glass-card rounded-3xl p-8 grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6">
         {[
           { label: t.atomicMass, value: formatNumericText(element.atomicMass), primary: true },
