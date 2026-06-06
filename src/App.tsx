@@ -23,6 +23,39 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { LanguageProvider, useLanguage, translations } from './contexts/LanguageContext';
 import { calculateQuizXP } from './types/user';
 
+const AdBanner300x250 = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    ref.current.innerHTML = '';
+    const cfg = document.createElement('script');
+    cfg.text = `atOptions = {'key':'4667224bc2d72b32b9ea9f39bba98114','format':'iframe','height':250,'width':300,'params':{}};`;
+    ref.current.appendChild(cfg);
+    const inv = document.createElement('script');
+    inv.src = 'https://www.highperformanceformat.com/4667224bc2d72b32b9ea9f39bba98114/invoke.js';
+    inv.async = true;
+    ref.current.appendChild(inv);
+    return () => { if (ref.current) ref.current.innerHTML = ''; };
+  }, []);
+  return (
+    <div className="flex justify-center my-6">
+      <div ref={ref} style={{ width: 300, height: 250 }} />
+    </div>
+  );
+};
+
+const AdNativeBanner = () => {
+  useEffect(() => {
+    const s = document.createElement('script');
+    s.async = true;
+    s.setAttribute('data-cfasync', 'false');
+    s.src = 'https://pl29656390.effectivecpmnetwork.com/df84483d64500455669730e614a8a09f/invoke.js';
+    document.body.appendChild(s);
+    return () => { if (document.body.contains(s)) document.body.removeChild(s); };
+  }, []);
+  return <div id="container-df84483d64500455669730e614a8a09f" className="my-6" />;
+};
+
 // --- Auth Wrapper ---
 const AppWithAuth: React.FC = () => {
   return (
@@ -206,6 +239,10 @@ const WelcomeScreen = ({ onStart }: { onStart?: () => void }) => {
             <ChaosButton onClick={() => navigate(ROUTES.elements)} label={language === 'ar' ? 'ابدأ الاستكشاف' : 'Start Exploring'} />
           </div>
         </section>
+
+        <div className="flex justify-center py-8">
+          <AdBanner300x250 />
+        </div>
 
         {/* Footer */}
         <footer className="px-6 py-8 text-center text-white/30 text-xs md:text-sm font-medium tracking-widest select-none border-t border-white/5">
@@ -649,6 +686,8 @@ const ElementDetailScreen = ({ element }: { element: ChemicalElement }) => {
           </div>
         ))}
       </div>
+
+      <AdBanner300x250 />
     </div>
   );
 };
@@ -1664,6 +1703,8 @@ const LessonScreen = ({ lesson, onBack, onNextLesson }: { lesson: Lesson, onBack
         </div>
       )}
 
+      <AdBanner300x250 />
+
       {/* Next Lesson Button */}
       <div className="mt-12 pt-8 border-t border-white/10">
         <motion.button 
@@ -1855,19 +1896,7 @@ const SearchScreen = ({ onSelectElement }: { onSelectElement: (e: ChemicalElemen
               ))}
             </div>
 
-            {/* Ad Container - Same size as element cards */}
-            <div className="glass-card rounded-2xl overflow-hidden border border-white/10 border-dashed h-[200px] flex flex-col">
-              <div className="h-32 bg-black/20 flex items-center justify-center">
-                <span className="font-label text-sm text-white/40 uppercase tracking-widest font-bold">Ad Space</span>
-              </div>
-              <div className="p-4 flex items-center justify-between flex-1">
-                <div>
-                  <span className="font-display text-xl text-white/40">Ads</span>
-                  <h3 className="text-on-surface-variant/40 text-xs">Advertisement</h3>
-                </div>
-                <div className="w-1 h-6 rounded-full bg-white/20" />
-              </div>
-            </div>
+            <AdNativeBanner />
           </section>
 
           <section className="space-y-6">
