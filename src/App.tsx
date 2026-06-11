@@ -332,10 +332,9 @@ const Header = ({ showBack }: { showBack?: boolean }) => {
           </h1>
         </button>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2">
         <img src="/images/sudan-flag.png" alt="Sudan Flag" className="w-7 h-7 rounded-full object-cover shrink-0" />
         <img src="/images/ministry-logo.png" alt="Ministry of Education" className="w-8 h-8 rounded-full object-cover bg-white shrink-0" />
-        <img src="/images/school-logo.png" alt="School Logo" className="w-8 h-8 rounded-full object-cover shrink-0" />
       </div>
     </header>
   );
