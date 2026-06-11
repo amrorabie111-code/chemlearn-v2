@@ -327,13 +327,13 @@ const Header = ({ showBack }: { showBack?: boolean }) => {
           onClick={() => navigate(ROUTES.elements)}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
         >
-          <img src="/flask.png" alt="Chemistry Beacon" className="w-7 h-7 object-contain shrink-0" />
           <h1 className="font-display text-lg md:text-xl font-bold text-primary-container drop-shadow-[0_0_8px_rgba(251,191,36,0.5)] tracking-tight whitespace-nowrap">
             {t.appTitle}
           </h1>
         </button>
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        <img src="/images/sudan-flag.png" alt="Sudan Flag" className="w-7 h-7 rounded-full object-cover shrink-0" />
         <img src="/images/ministry-logo.png" alt="Ministry of Education" className="w-8 h-8 rounded-full object-cover bg-white shrink-0" />
         <img src="/images/school-logo.png" alt="School Logo" className="w-8 h-8 rounded-full object-cover shrink-0" />
       </div>
