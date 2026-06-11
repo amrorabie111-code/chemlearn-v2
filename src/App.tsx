@@ -1211,7 +1211,6 @@ const QuizScreen = ({
   const handleSelectCourse = (courseId: string) => {
     if (!canAccessQuiz) {
       onRequireAccount();
-      return;
     }
     if (onCourseSelect) {
       onCourseSelect(courseId);

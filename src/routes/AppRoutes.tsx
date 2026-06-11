@@ -136,7 +136,7 @@ function CourseDetailPage() {
       courseId={courseId}
       onBack={() => navigate(-1)}
       onSelectLesson={(lessonId) => {
-        if (requireAuth()) return;
+        requireAuth();
         navigate(ROUTES.lesson(courseId, lessonId));
       }}
     />
@@ -227,7 +227,6 @@ function MainLayout() {
   const requireAuth = () => {
     if (!isAuthenticated) {
       setShowCourseAccessModal(true);
-      return true;
     }
     return false;
   };
@@ -292,24 +291,24 @@ function MainLayout() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="space-y-2">
-                <h3 className="font-headline text-2xl text-white">{t.accountRequired}</h3>
-                <p className="text-white/70 text-sm leading-relaxed">{t.accountRequiredMessage}</p>
+                <h3 className="font-headline text-2xl text-white">{t.saveProgress || 'Save Your Progress'}</h3>
+                <p className="text-white/70 text-sm leading-relaxed">{t.loginToSaveProgress || 'Log in or create an account to save your progress and sync across devices.'}</p>
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCourseAccessModal(false)}
                   className="flex-1 py-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors font-medium"
                 >
-                  {t.close}
+                  {t.later || 'Later'}
                 </button>
                 <button
                   onClick={() => {
                     setShowCourseAccessModal(false);
-                    navigate(ROUTES.signup);
+                    navigate(ROUTES.login);
                   }}
                   className="flex-1 py-3 rounded-full bg-primary-container text-on-primary-container font-bold hover:opacity-90 transition-opacity"
                 >
-                  {t.signup}
+                  {t.signIn}
                 </button>
               </div>
             </motion.div>
