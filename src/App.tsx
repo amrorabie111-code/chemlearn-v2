@@ -10,6 +10,7 @@ import {
 import { ALL_ELEMENTS, COURSES, LESSONS, COURSE_QUIZZES, getLocalizedCourse, getLocalizedLesson, getLocalizedQuiz } from './data/elements';
 import { ChemicalElement, Course, ElementCategory, Lesson, QuizQuestion } from './types';
 import { AtomModel } from './components/AtomModel';
+import ZoomableImage from './components/ZoomableImage';
 import ChaosButton from './components/ChaosButton';
 import { ParticleCanvas } from './components/ParticleCanvas';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -1455,11 +1456,7 @@ const LessonScreen = ({ lesson, onBack, onNextLesson }: { lesson: Lesson, onBack
                           loading="lazy"
                         />
                       ) : (
-                        <img
-                          src={section.imageUrl}
-                          alt={section.imageAlt || ''}
-                          className="w-full h-48 object-cover"
-                        />
+                        <ZoomableImage src={section.imageUrl} alt={section.imageAlt || ''} className="w-full h-48 object-cover" />
                       )}
                     </div>
                   )}
@@ -1484,11 +1481,7 @@ const LessonScreen = ({ lesson, onBack, onNextLesson }: { lesson: Lesson, onBack
                   )}
                   {section.imageUrl && (
                     <div className="rounded-2xl overflow-hidden shadow-lg mt-4">
-                      <img 
-                        src={section.imageUrl} 
-                        alt={section.imageAlt || ''}
-                        className="w-full h-48 object-cover"
-                      />
+                      <ZoomableImage src={section.imageUrl} alt={section.imageAlt || ''} className="w-full h-48 object-cover" />
                     </div>
                   )}
                 </div>
